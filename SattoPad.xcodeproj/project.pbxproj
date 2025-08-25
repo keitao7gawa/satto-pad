@@ -35,16 +35,6 @@
 			path = SattoPad;
 			sourceTree = "<group>";
 		};
-		E67378FB2E5C6B1000ADBB9D /* SattoPadTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SattoPadTests;
-			sourceTree = "<group>";
-		};
-		E67379052E5C6B1000ADBB9D /* SattoPadUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SattoPadUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +66,6 @@
 			isa = PBXGroup;
 			children = (
 				E67378EC2E5C6B0D00ADBB9D /* SattoPad */,
-				E67378FB2E5C6B1000ADBB9D /* SattoPadTests */,
-				E67379052E5C6B1000ADBB9D /* SattoPadUITests */,
 				E67378EB2E5C6B0D00ADBB9D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -130,9 +118,6 @@
 			dependencies = (
 				E67378FA2E5C6B1000ADBB9D /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				E67378FB2E5C6B1000ADBB9D /* SattoPadTests */,
-			);
 			name = SattoPadTests;
 			packageProductDependencies = (
 			);
@@ -152,9 +137,6 @@
 			);
 			dependencies = (
 				E67379042E5C6B1000ADBB9D /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				E67379052E5C6B1000ADBB9D /* SattoPadUITests */,
 			);
 			name = SattoPadUITests;
 			packageProductDependencies = (

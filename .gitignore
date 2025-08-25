@@ -1,0 +1,30 @@
+# macOS/iOS App Development
+#
+# Created by https://www.toptal.com/developers/gitignore/api/swift
+# Edit at https://www.toptal.com/developers/gitignore?templates=swift
+
+### Swift ###
+# Xcode
+#
+# gitignore contributors: remember to update Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
+
+## User-specific files
+*.xcuserdatad
+*.xcworkspace
+
+## Build generated
+build/
+DerivedData/
+
+## Swift Package Manager
+#
+# Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
+# Packages/
+#
+.build/
+.swiftpm/
+
+## Other
+*.dSYM/
+
+# End of https://www.toptal.com/developers/gitignore/api/swift
