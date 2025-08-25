@@ -10,16 +10,15 @@ import AppKit
 
 @main
 struct SattoPadApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     init() {
         // Hide Dock icon for menu bar–only behavior
         NSApplication.shared.setActivationPolicy(.accessory)
     }
 
     var body: some Scene {
-        MenuBarExtra("SattoPad", systemImage: "note.text") {
-            ContentView()
-                .frame(width: 420, height: 520)
-        }
-        .menuBarExtraStyle(.window)
+        // No SwiftUI scenes; status item and popover are managed in AppDelegate
+        Settings { EmptyView() }
     }
 }

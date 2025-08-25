@@ -16,10 +16,21 @@ struct ContentView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("SattoPad")
-                .font(.headline)
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
+            HStack {
+                Text("SattoPad")
+                    .font(.headline)
+                Spacer()
+                Button("Use F18") {
+                    (NSApp.delegate as? AppDelegate)?.registerF18HotKey()
+                }
+                .help("Fallback if modifiers are blocked by another app")
+                Button(action: { closePopover() }) {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
 
             TextEditor(text: $memoText)
                 .font(.body)
