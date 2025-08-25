@@ -6,9 +6,13 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct ContentView: View {
     @State private var memoText: String = ""
+    @FocusState private var isEditorFocused: Bool
+    @State private var escapeKeyMonitor: Any?
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -22,7 +26,32 @@ struct ContentView: View {
                 .frame(minWidth: 380, idealWidth: 420, maxWidth: 520,
                        minHeight: 360, idealHeight: 420, maxHeight: 560)
                 .padding(8)
+                .focused($isEditorFocused)
         }
+        .onAppear {
+            isEditorFocused = true
+            escapeKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                // keyCode 53 == Escape
+                if event.keyCode == 53 && isEditorFocused {
+                    closePopover()
+                    return nil // consume the key event
+                }
+                return event
+            }
+        }
+        .onDisappear {
+            if let monitor = escapeKeyMonitor {
+                NSEvent.removeMonitor(monitor)
+                escapeKeyMonitor = nil
+            }
+        }
+    }
+
+    private func closePopover() {
+        // Try SwiftUI dismissal first
+        dismiss()
+        // Fallback: close the key window (works for MenuBarExtra window/popover)
+        NSApp.keyWindow?.performClose(nil)
     }
 }
 
