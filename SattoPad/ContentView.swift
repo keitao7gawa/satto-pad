@@ -18,53 +18,73 @@ struct ContentView: View {
     @State private var overlayOpacity: Double = OverlaySettingsStore.opacity
     @Environment(\.dismiss) private var dismiss
     @StateObject private var mdStore = MarkdownStore.shared
+    @State private var showConfirmReload: Bool = false
+    @State private var showConfirmChangeLocation: Bool = false
+    @State private var showErrorAlert: Bool = false
+    @State private var errorMessage: String = ""
+    @State private var showWarningAlert: Bool = false
+    @State private var warningMessage: String = ""
+    @State private var showHotkeySheet: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("SattoPad")
-                    .font(.headline)
-                Spacer()
-                // Opacity slider (simple control)
-                VStack(spacing: 2) {
-                    Text("透明度 \(Int((overlayOpacity * 100).rounded()))%")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                        .frame(width: 160)
-                        .multilineTextAlignment(.center)
-                    // Native NSSlider to avoid tick-like segment visuals
-                    NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
-                        .frame(width: 160)
-                }
-                .padding(.trailing, 6)
-                #if canImport(KeyboardShortcuts)
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("Hotkey")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    KeyboardShortcuts.Recorder(for: .toggleSattoPad)
-                }
-                #else
-                Text("Add KeyboardShortcuts package to enable recorder")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                #endif
-
-                Menu {
-                    Button("保存先を選択…") { mdStore.selectSaveLocation() }
-                    Button("ファイルから再読み込み") { mdStore.reloadFromDisk() }
-                    if mdStore.isSaving {
-                        Text("保存中…")
+            ViewThatFits(in: .horizontal) {
+                // Variant 1: Single-row with inline hotkey recorder
+                HStack(spacing: 8) {
+                    Spacer(minLength: 0)
+                    VStack(spacing: 2) {
+                        Text("透明度 \(Int((overlayOpacity * 100).rounded()))%")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                            .frame(width: 140)
+                            .multilineTextAlignment(.center)
+                        NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
+                            .frame(width: 140)
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
+                    #if canImport(KeyboardShortcuts)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Hotkey")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        KeyboardShortcuts.Recorder(for: .toggleSattoPad)
+                    }
+                    #endif
+                    Menu {
+                        Button("保存先を選択…") { requestSelectSaveLocation() }
+                        Button("ファイルから再読み込み") { requestReload() }
+                        if mdStore.isSaving { Text("保存中…") }
+                    } label: { Image(systemName: "ellipsis.circle") }
+                    .menuStyle(.borderlessButton)
+                    Button(action: { closePopover() }) { Image(systemName: "xmark") }
+                        .buttonStyle(.borderless)
                 }
-                .menuStyle(.borderlessButton)
-                Button(action: { closePopover() }) {
-                    Image(systemName: "xmark")
+
+                // Variant 2: Compact header without inline hotkey (hotkey in menu)
+                HStack(spacing: 8) {
+                    Spacer(minLength: 0)
+                    VStack(spacing: 2) {
+                        Text("透明度 \(Int((overlayOpacity * 100).rounded()))%")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                            .frame(width: 140)
+                            .multilineTextAlignment(.center)
+                        NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
+                            .frame(width: 140)
+                    }
+                    Menu {
+                        Button("保存先を選択…") { requestSelectSaveLocation() }
+                        Button("ファイルから再読み込み") { requestReload() }
+                        #if canImport(KeyboardShortcuts)
+                        Button("ホットキーを設定…") { showHotkeySheet = true }
+                        #endif
+                        if mdStore.isSaving { Text("保存中…") }
+                    } label: { Image(systemName: "ellipsis.circle") }
+                    .menuStyle(.borderlessButton)
+                    Button(action: { closePopover() }) { Image(systemName: "xmark") }
+                        .buttonStyle(.borderless)
                 }
-                .buttonStyle(.borderless)
             }
             .padding(.horizontal, 8)
             .padding(.top, 8)
@@ -104,6 +124,8 @@ struct ContentView: View {
                 NSEvent.removeMonitor(monitor)
                 escapeKeyMonitor = nil
             }
+            // Flush pending saves when view disappears
+            mdStore.saveNow()
             // Hide overlay and disable adjustments when popover closes
             OverlayManager.shared.hide()
             OverlayManager.shared.setAdjustable(false)
@@ -117,6 +139,18 @@ struct ContentView: View {
             memoText = newValue
             OverlayManager.shared.update(text: newValue)
         }
+        .onChange(of: mdStore.lastErrorMessage) { _, newValue in
+            guard let msg = newValue, !msg.isEmpty else { return }
+            errorMessage = msg
+            showErrorAlert = true
+            mdStore.lastErrorMessage = nil
+        }
+        .onChange(of: mdStore.lastWarningMessage) { _, newValue in
+            guard let msg = newValue, !msg.isEmpty else { return }
+            warningMessage = msg
+            showWarningAlert = true
+            mdStore.lastWarningMessage = nil
+        }
         .onChange(of: overlayOpacity) { _, newValue in
             let clamped = max(0.05, min(1.0, newValue))
             // Round to 2 decimals to stabilize float errors for 1% steps
@@ -125,6 +159,28 @@ struct ContentView: View {
                 overlayOpacity = rounded
             }
             OverlaySettingsStore.opacity = rounded
+        }
+        .alert("未保存の変更", isPresented: $showConfirmReload) {
+            Button("破棄して再読み込み", role: .destructive) { mdStore.reloadFromDisk() }
+            Button("キャンセル", role: .cancel) { }
+        } message: {
+            Text("保存されていない変更があります。破棄して再読み込みしますか？")
+        }
+        .alert("未保存の変更", isPresented: $showConfirmChangeLocation) {
+            Button("破棄して保存先を変更", role: .destructive) { mdStore.selectSaveLocation() }
+            Button("キャンセル", role: .cancel) { }
+        } message: {
+            Text("保存されていない変更があります。破棄して保存先を変更しますか？")
+        }
+        .alert("エラー", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+        .alert("警告", isPresented: $showWarningAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(warningMessage)
         }
     }
 
@@ -136,6 +192,22 @@ struct ContentView: View {
         // Also ensure overlay is hidden when closing via ESC or button
         OverlayManager.shared.hide()
         OverlayManager.shared.setAdjustable(false)
+    }
+
+    private func requestReload() {
+        if mdStore.hasPendingChanges {
+            showConfirmReload = true
+        } else {
+            mdStore.reloadFromDisk()
+        }
+    }
+
+    private func requestSelectSaveLocation() {
+        if mdStore.hasPendingChanges {
+            showConfirmChangeLocation = true
+        } else {
+            mdStore.selectSaveLocation()
+        }
     }
 }
 
