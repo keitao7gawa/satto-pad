@@ -9,6 +9,9 @@ import Foundation
 import SwiftUI
 import AppKit
 import Carbon.HIToolbox
+#if canImport(KeyboardShortcuts)
+import KeyboardShortcuts
+#endif
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
@@ -30,12 +33,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentSize = NSSize(width: 420, height: 520)
         popover.contentViewController = NSHostingController(rootView: ContentView())
 
-        // Register global hotkey (default)
+        // Register global hotkey (KeyboardShortcuts preferred)
+        #if canImport(KeyboardShortcuts)
+        KeyboardShortcutsDefaults.ensureDefaultIfNeeded()
+        KeyboardShortcuts.onKeyDown(for: .toggleSattoPad) { [weak self] in
+            self?.togglePopover(nil)
+        }
+        #else
         registerDefaultHotKey()
+        #endif
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        #if !canImport(KeyboardShortcuts)
         unregisterGlobalHotKey()
+        #endif
     }
 
     @objc func togglePopover(_ sender: Any?) {
@@ -58,7 +70,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-// MARK: - Global Hot Key (Cmd + Option + Control + T)
+#if !canImport(KeyboardShortcuts)
+// MARK: - Global Hot Key (Carbon fallback)
 // Global hotkey C-callback
 private func SattoPadHotKeyHandler(_ nextHandler: EventHandlerCallRef?, _ eventRef: EventRef?, _ userData: UnsafeMutableRawPointer?) -> OSStatus {
     var hotKeyID = EventHotKeyID()
@@ -149,3 +162,4 @@ extension AppDelegate {
         }
     }
 }
+#endif
