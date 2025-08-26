@@ -1,0 +1,105 @@
+---
+alwaysApply: false
+---
+# SattoPad オーバーレイ（プレビュー）実装計画
+
+`@.cursor/rules/sattopad-dev-plan.mdc` と `sattopad-projects.mdc` を踏まえ、ショートカット押下中のみ画面左上にMarkdownプレビューを一時表示する「オーバーレイ」の開発方針を定義します。編集はポップオーバーで行い、オーバーレイの位置はポップオーバー表示中に調整できるようにします。
+
+## 目的 / スコープ
+- 目的: 機動的にメモを「見る」ための軽量なプレビューを提供（押下中のみ表示）
+- スコープ:
+  - オーバーレイ表示/非表示（KeyboardShortcuts で onKeyDown / onKeyUp）
+  - 表示位置の調整（ポップオーバー表示中のみドラッグ）と永続化
+  - Markdownレンダリング（軽量・高品質のバランス）
+- 非スコープ:
+  - 複数オーバーレイの同時表示
+  - 複雑なウィンドウ管理（デスクトップ常駐、背面固定など）
+
+## ユースケース / UX要件
+- ショートカットを押している間だけ左上にプレビュー表示（押下→表示、離す→即非表示）
+- デフォルト表示位置は「メイン画面の左上」。
+- ポップオーバーを開いている間は、プレビューをドラッグして位置調整可能（ハンドル/ドラッグ領域を表示）。
+- 調整が終わったら次回からその位置で表示。
+- プレビューは読み取り専用。編集はポップオーバー内の `TextEditor`。
+- 表示/非表示の体感遅延: 50ms 以内を目安。
+
+## 技術仕様
+- ショートカット: KeyboardShortcuts（`.onKeyDown(.toggleSattoPad)` で表示、`.onKeyUp` で非表示）
+- ウィンドウ: `NSPanel`（もしくはボーダーレス `NSWindow`）
+  - `level`: `.floating`（メニュー等の上に出す必要があれば `.statusBar` 検討）
+  - `styleMask`: `.borderless`
+  - `isOpaque = false`, `backgroundColor = .clear`
+  - クリック透過はしない（誤操作防止）。調整時のみドラッグ可
+  - マルチディスプレイ対応: 対象 `NSScreen` を保持、無効時はメイン画面にフォールバック
+- 表示位置: `NSScreen` 座標系（表示原点を画面左上に合わせるヘルパーを用意）
+  - 永続化形式: 画面ID + 正規化座標（0..1 の相対位置）
+  - 画面変更/解像度変更時: 正規化座標から安全な領域に再配置
+- レンダリング: SwiftUI のプレビュー `OverlayPreviewView`
+  - Markdown: 最初はテキストをそのまま（MVP）。その後 `AttributedString` + `MarkdownKit` 等の軽量導入を検討
+  - デバウンス: 編集側からの更新反映は 100–200ms デバウンス
+- パフォーマンス: 初回以外はウィンドウ再生成せず、非表示時は `orderOut` のみ
+
+## アーキテクチャ（構成）
+- `OverlayManager`（ObservableObject / シングルトン）
+  - `show()`/`hide()`/`toggle()`
+  - `update(text:)`（プレビューコンテンツ更新）
+  - 位置のロード/保存
+  - ウィンドウ所有（`NSPanel` + `NSHostingView(OverlayPreviewView)`）
+- `OverlayPreviewView: View`
+  - `text` を受け取り（将来 `markdown`）、非インタラクティブ表示
+  - 調整モードフラグ（ポップオーバー表示時）でドラッグハンドルを出す
+- `OverlayPositionStore`
+  - `UserDefaults` キー例: `sattoPad.overlay.screenId`, `sattoPad.overlay.positionX`, `sattoPad.overlay.positionY`
+  - 画面IDは `CGDirectDisplayID` を `Int` 化して保持
+
+## フロー
+- onKeyDown(.toggleSattoPad): `OverlayManager.show()`
+- onKeyUp(.toggleSattoPad): `OverlayManager.hide()`
+- ポップオーバー開閉に同期して `OverlayManager.isAdjustable = true/false`
+- ドラッグで座標更新→正規化→保存
+
+## エッジケース / エラー処理
+- 保存済み画面が見つからない: メイン画面左上にフォールバック
+- 座標が画面外: マージン内にクリップ
+- テキスト未ロード/空: プレースホルダー（例: "No content"）を薄く表示
+- ショートカット同時押下/連打: 二重表示防止（idempotent）
+
+## 非機能要件
+- 表示/非表示 50ms 以内（目標）
+- 常駐時CPU < 1%、メモリ < 100MB（目安）
+- 調整時以外はヒットテスト最小限
+
+## 受け入れ基準
+- 押下中のみオーバーレイが表示され、離すとすぐに消える
+- デフォルト左上表示で、位置をドラッグで調整し保存できる
+- 再起動後も保存された位置で表示される
+- 編集内容の更新が 200ms 以内でプレビュー反映される
+
+## 実装メモ（インターフェース）
+- OverlayManager
+  - `func show()` / `func hide()` / `func update(text: String)`
+  - `var isAdjustable: Bool`（ポップオーバー開閉に連動）
+- OverlayPositionStore
+  - `func load() -> (screenId: Int?, x: CGFloat, y: CGFloat)`
+  - `func save(screenId: Int?, x: CGFloat, y: CGFloat)`
+- SwiftUI ↔ AppKit ブリッジ
+  - `NSHostingView(rootView: OverlayPreviewView(text: ...))`
+  - ドラッグは SwiftUI の `DragGesture` で座標通知 → `OverlayManager` で `setFrameOrigin`
+
+## セキュリティ / サンドボックス
+- 既存方針踏襲。ファイルアクセスはユーザー選択または `~/Documents/SattoPad.md`
+- オーバーレイはローカル描画のみ。追加権限は不要
+
+## テスト計画（手動）
+- 押下/離しでの表示/非表示を各前面アプリ上で確認（Finder/Safari/Xcode等）
+- 位置調整→保存→再起動→復元
+- マルチディスプレイでの表示位置（サブ画面へ移動→保存→復元）
+- 編集更新→プレビュー反映遅延（目視でOK）
+
+## 開発タスク（高粒度）
+1. OverlayManager と OverlayPreviewView の骨組み実装
+2. KeyboardShortcuts から show/hide を接続（onKeyDown/onKeyUp）
+3. 調整モード（ポップオーバー開時）とドラッグによる位置変更
+4. PositionStore の実装（正規化座標 + 画面ID）
+5. Markdown レンダリング（MVPはプレーン→後でMarkdownに切替）
+6. 手動QAと微調整（位置クリップ、遅延、マルチディスプレイ）
