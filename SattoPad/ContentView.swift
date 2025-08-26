@@ -44,6 +44,12 @@ struct ContentView: View {
                        minHeight: 360, idealHeight: 420, maxHeight: 560)
                 .padding(8)
                 .focused($isEditorFocused)
+                .onChange(of: isEditorFocused) { _, focused in
+                    // When the editor gets focus, ensure overlay is adjustable
+                    if focused {
+                        OverlayManager.shared.setAdjustable(true)
+                    }
+                }
         }
         .onAppear {
             isEditorFocused = true

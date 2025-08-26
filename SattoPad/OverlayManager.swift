@@ -40,7 +40,7 @@ final class OverlayManager: ObservableObject {
         let view = OverlayPreviewView(text: memoText, adjustable: isAdjustable)
         let hosting = DraggableHostingView(rootView: view)
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 220),
+            contentRect: NSRect(x: 0, y: 0, width: OverlaySettingsStore.width, height: OverlaySettingsStore.height),
             styleMask: [.titled, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -108,8 +108,10 @@ final class OverlayManager: ObservableObject {
     private func positionPanelInitial(_ panel: NSPanel) {
         let (screen, normX, normY) = loadPosition()
         let targetScreen = screen ?? NSScreen.main
-        let frame = panel.frame
-        let origin = convertNormalizedToScreenOrigin(normX: normX, normY: normY, size: frame.size, screen: targetScreen)
+        let origin = convertNormalizedToScreenOrigin(normX: normX,
+                                                     normY: normY,
+                                                     size: CGSize(width: OverlaySettingsStore.width, height: OverlaySettingsStore.height),
+                                                     screen: targetScreen)
         panel.setFrameOrigin(origin)
     }
 

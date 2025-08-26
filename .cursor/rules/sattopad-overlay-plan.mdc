@@ -35,7 +35,9 @@ alwaysApply: false
   - 永続化形式: 画面ID + 正規化座標（0..1 の相対位置）
   - 画面変更/解像度変更時: 正規化座標から安全な領域に再配置
 - レンダリング: SwiftUI のプレビュー `OverlayPreviewView`
-  - Markdown: 最初はテキストをそのまま（MVP）。その後 `AttributedString` + `MarkdownKit` 等の軽量導入を検討
+  - Markdown: Appleの `AttributedString(markdown:)` を第一候補とし、装飾（見出し/コード/リンク）に対応。必要に応じて `MarkdownUI` などの外部ライブラリ導入を比較
+  - リンク/画像: MVPではリンクは無効・画像は非表示（パフォーマンス優先）。将来ON/OFF設定
+  - 行間/フォント: 読みやすい最小限のタイポグラフィを適用（例: system 13pt、lineSpacing 2）
   - デバウンス: 編集側からの更新反映は 100–200ms デバウンス
 - パフォーマンス: 初回以外はウィンドウ再生成せず、非表示時は `orderOut` のみ
 
