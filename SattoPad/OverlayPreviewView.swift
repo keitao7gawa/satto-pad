@@ -38,20 +38,6 @@ struct OverlayPreviewView: View {
         }
         .frame(width: 360, height: 220)
         .contentShape(Rectangle())
-        .highPriorityGesture(adjustable ? dragGesture : nil)
         .clipped()
-    }
-
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 1, coordinateSpace: .global)
-            .onChanged { value in
-                if dragOffset == .zero { OverlayManager.shared.beginDrag() }
-                dragOffset = value.translation
-                OverlayManager.shared.drag(to: value.translation)
-            }
-            .onEnded { value in
-                OverlayManager.shared.endDrag(translation: value.translation)
-                dragOffset = .zero
-            }
     }
 }

@@ -38,7 +38,7 @@ final class OverlayManager: ObservableObject {
             return
         }
         let view = OverlayPreviewView(text: memoText, adjustable: isAdjustable)
-        let hosting = NSHostingView(rootView: view)
+        let hosting = DraggableHostingView(rootView: view)
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 360, height: 220),
             styleMask: [.titled, .fullSizeContentView],
@@ -58,6 +58,7 @@ final class OverlayManager: ObservableObject {
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .transient]
         panel.contentView = hosting
+        hosting.isDraggable = isAdjustable
 
         self.panel = panel
         self.hostingView = hosting
@@ -74,9 +75,9 @@ final class OverlayManager: ObservableObject {
     func setAdjustable(_ adjustable: Bool) {
         isAdjustable = adjustable
         panel?.ignoresMouseEvents = !adjustable
-        if let hostingView {
-            hostingView.rootView = OverlayPreviewView(text: memoText, adjustable: adjustable)
-        }
+        panel?.isMovableByWindowBackground = adjustable
+        (panel?.contentView as? DraggableHostingView<OverlayPreviewView>)?.isDraggable = adjustable
+        hostingView?.rootView = OverlayPreviewView(text: memoText, adjustable: adjustable)
     }
 
     // MARK: - Dragging
