@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var memoText: String = ""
     @FocusState private var isEditorFocused: Bool
     @State private var escapeKeyMonitor: Any?
+    @State private var overlayOpacity: Double = OverlaySettingsStore.opacity
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -23,8 +24,26 @@ struct ContentView: View {
                 Text("SattoPad")
                     .font(.headline)
                 Spacer()
+                // Opacity slider (simple control)
+                VStack(spacing: 2) {
+                    Text("透明度 \(Int((overlayOpacity * 100).rounded()))%")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .frame(width: 160)
+                        .multilineTextAlignment(.center)
+                    // Native NSSlider to avoid tick-like segment visuals
+                    NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
+                        .frame(width: 160)
+                }
+                .padding(.trailing, 6)
                 #if canImport(KeyboardShortcuts)
-                KeyboardShortcuts.Recorder("Toggle SattoPad:", name: .toggleSattoPad)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Hotkey")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    KeyboardShortcuts.Recorder(for: .toggleSattoPad)
+                }
                 #else
                 Text("Add KeyboardShortcuts package to enable recorder")
                     .font(.footnote)
@@ -40,8 +59,7 @@ struct ContentView: View {
 
             TextEditor(text: $memoText)
                 .font(.body)
-                .frame(minWidth: 380, idealWidth: 420, maxWidth: 520,
-                       minHeight: 360, idealHeight: 420, maxHeight: 560)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(8)
                 .focused($isEditorFocused)
                 .onChange(of: isEditorFocused) { _, focused in
@@ -51,6 +69,7 @@ struct ContentView: View {
                     }
                 }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
             isEditorFocused = true
             // When the popover opens, show overlay and allow drag to reposition
@@ -78,6 +97,15 @@ struct ContentView: View {
         .onChange(of: memoText) { _, newValue in
             OverlayManager.shared.update(text: newValue)
         }
+        .onChange(of: overlayOpacity) { _, newValue in
+            let clamped = max(0.05, min(1.0, newValue))
+            // Round to 2 decimals to stabilize float errors for 1% steps
+            let rounded = (clamped * 100).rounded() / 100
+            if abs(rounded - overlayOpacity) > 0.000_001 {
+                overlayOpacity = rounded
+            }
+            OverlaySettingsStore.opacity = rounded
+        }
     }
 
     private func closePopover() {
@@ -85,9 +113,48 @@ struct ContentView: View {
         dismiss()
         // Fallback: close the key window (works for MenuBarExtra window/popover)
         NSApp.keyWindow?.performClose(nil)
-        // Also ensure overlay is hidden when closing via ESC
+        // Also ensure overlay is hidden when closing via ESC or button
         OverlayManager.shared.hide()
         OverlayManager.shared.setAdjustable(false)
+    }
+}
+
+// MARK: - NativeSlider (NSSlider wrapper) to ensure no tick marks
+private struct NativeSlider: NSViewRepresentable {
+    @Binding var value: Double
+    var range: ClosedRange<Double>
+    var isContinuous: Bool = true
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeNSView(context: Context) -> NSSlider {
+        let slider = NSSlider()
+        slider.minValue = range.lowerBound
+        slider.maxValue = range.upperBound
+        slider.numberOfTickMarks = 0
+        slider.allowsTickMarkValuesOnly = false
+        slider.isContinuous = isContinuous
+        slider.target = context.coordinator
+        slider.action = #selector(Coordinator.valueChanged(_:))
+        slider.doubleValue = value
+        return slider
+    }
+
+    func updateNSView(_ nsView: NSSlider, context: Context) {
+        nsView.minValue = range.lowerBound
+        nsView.maxValue = range.upperBound
+        nsView.isContinuous = isContinuous
+        if abs(nsView.doubleValue - value) > 0.000_001 {
+            nsView.doubleValue = value
+        }
+    }
+
+    final class Coordinator: NSObject {
+        var parent: NativeSlider
+        init(_ parent: NativeSlider) { self.parent = parent }
+        @objc func valueChanged(_ sender: NSSlider) {
+            parent.value = sender.doubleValue
+        }
     }
 }
 

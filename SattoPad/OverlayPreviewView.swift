@@ -11,12 +11,15 @@ import Foundation
 struct OverlayPreviewView: View {
     let text: String
     let adjustable: Bool
+    @AppStorage("sattoPad.overlay.opacity") private var overlayOpacity: Double = 0.95
     @State private var dragOffset: CGSize = .zero
 
     var body: some View {
         ZStack(alignment: .topLeading) {
+            // Make only the background translucent; keep text fully opaque
             RoundedRectangle(cornerRadius: 10)
                 .fill(.ultraThinMaterial)
+                .opacity(overlayOpacity)
                 .shadow(radius: 8)
             ScrollView {
                 if text.isEmpty {
