@@ -47,9 +47,13 @@ struct ContentView: View {
         }
         .onAppear {
             isEditorFocused = true
+            // When the popover opens, show overlay and allow drag to reposition
+            OverlayManager.shared.setAdjustable(true)
+            OverlayManager.shared.update(text: memoText)
+            OverlayManager.shared.show()
             escapeKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 // keyCode 53 == Escape
-                if event.keyCode == 53 && isEditorFocused {
+                if event.keyCode == 53 {
                     closePopover()
                     return nil // consume the key event
                 }
@@ -61,6 +65,12 @@ struct ContentView: View {
                 NSEvent.removeMonitor(monitor)
                 escapeKeyMonitor = nil
             }
+            // Hide overlay and disable adjustments when popover closes
+            OverlayManager.shared.hide()
+            OverlayManager.shared.setAdjustable(false)
+        }
+        .onChange(of: memoText) { _, newValue in
+            OverlayManager.shared.update(text: newValue)
         }
     }
 
@@ -69,6 +79,9 @@ struct ContentView: View {
         dismiss()
         // Fallback: close the key window (works for MenuBarExtra window/popover)
         NSApp.keyWindow?.performClose(nil)
+        // Also ensure overlay is hidden when closing via ESC
+        OverlayManager.shared.hide()
+        OverlayManager.shared.setAdjustable(false)
     }
 }
 

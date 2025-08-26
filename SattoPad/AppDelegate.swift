@@ -13,7 +13,7 @@ import Carbon.HIToolbox
 import KeyboardShortcuts
 #endif
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var statusItem: NSStatusItem!
     private let popover = NSPopover()
     private var hotKeyRef: EventHotKeyRef?
@@ -32,12 +32,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 420, height: 520)
         popover.contentViewController = NSHostingController(rootView: ContentView())
+        popover.delegate = self
 
         // Register global hotkey (KeyboardShortcuts preferred)
         #if canImport(KeyboardShortcuts)
         KeyboardShortcutsDefaults.ensureDefaultIfNeeded()
-        KeyboardShortcuts.onKeyDown(for: .toggleSattoPad) { [weak self] in
-            self?.togglePopover(nil)
+        KeyboardShortcuts.onKeyDown(for: .toggleSattoPad) {
+            OverlayManager.shared.show()
+        }
+        KeyboardShortcuts.onKeyUp(for: .toggleSattoPad) {
+            OverlayManager.shared.hide()
         }
         #else
         registerDefaultHotKey()
@@ -63,10 +67,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         // Bring app forward enough to receive key events inside the popover
         NSApp.activate(ignoringOtherApps: true)
+        // Enable overlay adjustment while popover is visible
+        OverlayManager.shared.setAdjustable(true)
+        OverlayManager.shared.show()
     }
 
     private func closePopover(_ sender: Any?) {
         popover.performClose(sender)
+        // Ensure overlay is hidden when popover closes
+        OverlayManager.shared.hide()
+        OverlayManager.shared.setAdjustable(false)
+    }
+
+    // MARK: - NSPopoverDelegate
+    func popoverWillShow(_ notification: Notification) {
+        OverlayManager.shared.setAdjustable(true)
+        OverlayManager.shared.show()
+    }
+
+    func popoverWillClose(_ notification: Notification) {
+        OverlayManager.shared.hide()
+        OverlayManager.shared.setAdjustable(false)
     }
 }
 
