@@ -1,0 +1,115 @@
+---
+alwaysApply: true
+---
+# SattoPad M3: 自動保存・読み込み（Markdown）実装ルール
+
+## 目的
+- メモ内容をローカル Markdown ファイルへ自動保存し、次回起動時に確実に復元する。
+- 保存先はユーザーが任意に変更可能。最低限、非サンドボックス配布とサンドボックス配布の両方を想定する。
+
+## スコープ
+- MVP としての自動保存・読み込み（エラー時の明示通知、保存先変更、明示的リロード）。
+- 外部変更の自動検出（ファイル監視）は任意（後続対応）。M3では明示的リロードを提供。
+
+## 機能要件
+- 既定保存先: `~/Documents/SattoPad.md`
+  - 初回保存時にファイルが存在しなければ自動作成（親ディレクトリが無ければ作成）。
+- 自動保存: 入力変更から約1.0秒のデバウンス後に保存（連続タイプの過剰書き込みを回避）。
+- 読み込み: アプリ起動時に既定/設定済みパスから全文読み込み。
+- 保存先変更: `NSOpenPanel` でファイル/フォルダを選択し、以後の自動保存・読み込みに反映。
+  - 非サンドボックス: フルパス文字列を `UserDefaults` に保存。
+  - サンドボックス: セキュリティ・スコープ付きブックマークを保存し、アクセス時に `startAccessingSecurityScopedResource()` を使用。
+- 明示的リロード: UI から「ファイルから再読み込み」を実行できる（未保存の編集がある場合は確認）。
+- エンコード: UTF-8（BOMなし）。改行は OS 既定に任せる（読み込み時は CR/LF を正規化）。
+- 書き込みモード: アトミック（テンポラリ→置換 or `write(to: atomically: true)`）。
+- 競合/同時実行: 書き込みはバックグラウンドキュー。UI はメインスレッドで更新。
+- 大きなファイル: ひとまず上限 5MB 程度を目安に（超過時は警告して保存は継続）。
+
+## 受け入れ基準（Acceptance Criteria）
+- 入力テキストが 1 秒程度で自動保存される。
+- アプリを終了→再起動すると、最後に保存された内容がそのまま表示される。
+- 保存先を変更後も、自動保存・再読み込みが新しいパスに対して動作する。
+- 保存/読み込み失敗時にユーザーに分かるフィードバックが出る（簡易バナー/トースト/警告）。
+
+## エラー/例外シナリオ
+- 読み込み失敗（ファイルなし/権限なし/破損）: 空で開く or 直前内容を保持し、バナー表示。再設定導線を提示。
+- 書き込み失敗（権限/容量/IO）: リトライ（最大3回/指数バックオフ）し、失敗時はバナー表示と保存先再設定の導線。
+- ブックマーク解決失敗（サンドボックス）: 再許可のためのパネルを提示。
+
+## 設定と永続化（UserDefaults キー）
+- `sattoPad.markdownPath` (String): 保存先のフルパス（非サンドボックス時）。
+- `sattoPad.markdownBookmark` (Data): セキュリティ・スコープ付きブックマーク（サンドボックス時）。
+- 既定値: パスは未設定の場合 `~/Documents/SattoPad.md` を使用。
+
+## 設計/構成
+- `MarkdownStore`（クラス or アクター）
+  - 責務: 保存先パス/ブックマークの管理、ロード、セーブ、デバウンス制御、明示リロード、保存先変更。
+  - 公開API（例）:
+```swift
+final class MarkdownStore: ObservableObject {
+    @Published private(set) var text: String = ""
+    @Published private(set) var isSaving: Bool = false
+
+    func loadOnLaunch() async
+    func setTextAndScheduleAutosave(_ newText: String)
+    func saveNow() async throws
+    func reloadFromDisk() async throws
+    func selectSaveLocation() async throws // NSOpenPanel を開く
+}
+```
+- デバウンス: `DispatchQueue` + `DispatchWorkItem` または Combine（`debounce`）で実装。
+- IO: `FileManager` と `String.write(to: atomically: encoding:)` を基本に、必要に応じて `FileManager.replaceItemAt` を使用。
+- サンドボックス: ブックマークから URL 取得→アクセス開始→処理→終了（finally で必ず `stopAccessing...`）。
+- UI 連携: `ContentView` 側は `@ObservedObject` で `MarkdownStore` を参照し、`TextEditor` の変更イベントで `setTextAndScheduleAutosave` を呼ぶ。起動時に `loadOnLaunch`。
+
+## 擬似コード（保存）
+```swift
+func setTextAndScheduleAutosave(_ newText: String) {
+    text = newText
+    debounce.schedule(after: 1.0) { [weak self] in
+        await self?.saveNow()
+    }
+}
+
+func saveNow() async throws {
+    guard let url = resolveSaveURL() else { throw SaveError.invalidURL }
+    let data = text.data(using: .utf8) ?? Data()
+    try await withCheckedThrowingContinuation { cont in
+        ioQueue.async {
+            do {
+                try data.write(to: url, options: [.atomic])
+                cont.resume()
+            } catch {
+                cont.resume(throwing: error)
+            }
+        }
+    }
+}
+```
+
+## UI 要件（M3 最低限）
+- ヘッダ部 or メニューに以下を追加:
+  - 「保存先を選択…」（`NSOpenPanel`）
+  - 「ファイルから再読み込み」
+  - 保存/読み込みの簡易ステータス（例: 右上に小さなスピナー/チェック）
+
+## 手動テスト
+- 既定パスで起動→本文入力→1秒待機→プロセス終了→再起動→復元される。
+- 保存先をデスクトップ等へ変更→入力→再起動→新パスの内容が復元。
+- 保存先ファイルを外部エディタで編集→「再読み込み」で反映。
+- 権限がなくなった/ファイルが削除された→エラーバナーと再設定導線。
+
+## 非目標（M3 ではやらない）
+- リアルタイムの外部変更検知（ファイル監視）
+- バージョン管理/ロールバック
+- 競合マージ
+
+## 実装メモ
+- 文字コードは UTF-8 固定。BOM は付与しない。
+- 不要なディスク書き込みを避けるため、直前保存内容と差分がない場合はスキップ。
+- 保存時はテキスト末尾の空白/改行をそのまま保持（ユーザーの意図を優先）。
+- ログは `os.Logger` で DEBUG のみ詳細出力。
+
+## 完了の定義
+- 受け入れ基準を満たすこと。
+- 上記の手動テストが通ること。
