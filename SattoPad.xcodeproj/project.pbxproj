@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E69531022E5D3A8400C30EA9 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = E69531012E5D3A8400C30EA9 /* KeyboardShortcuts */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		E67378F92E5C6B1000ADBB9D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,9 +33,22 @@
 		E67379022E5C6B1000ADBB9D /* SattoPadUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SattoPadUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E69530FF2E5D3A4700C30EA9 /* Exceptions for "SattoPad" folder in "SattoPad" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E67378E92E5C6B0D00ADBB9D /* SattoPad */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E67378EC2E5C6B0D00ADBB9D /* SattoPad */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E69530FF2E5D3A4700C30EA9 /* Exceptions for "SattoPad" folder in "SattoPad" target */,
+			);
 			path = SattoPad;
 			sourceTree = "<group>";
 		};
@@ -42,6 +59,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E69531022E5D3A8400C30EA9 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,6 +84,7 @@
 			isa = PBXGroup;
 			children = (
 				E67378EC2E5C6B0D00ADBB9D /* SattoPad */,
+				E69531002E5D3A8400C30EA9 /* Frameworks */,
 				E67378EB2E5C6B0D00ADBB9D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -78,6 +97,13 @@
 				E67379022E5C6B1000ADBB9D /* SattoPadUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E69531002E5D3A8400C30EA9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -100,6 +126,7 @@
 			);
 			name = SattoPad;
 			packageProductDependencies = (
+				E69531012E5D3A8400C30EA9 /* KeyboardShortcuts */,
 			);
 			productName = SattoPad;
 			productReference = E67378EA2E5C6B0D00ADBB9D /* SattoPad.app */;
@@ -177,6 +204,9 @@
 			);
 			mainGroup = E67378E12E5C6B0D00ADBB9D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E69530FB2E5D2F2300C30EA9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E67378EB2E5C6B0D00ADBB9D /* Products */;
 			projectDirPath = "";
@@ -380,6 +410,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SattoPad/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -406,6 +437,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SattoPad/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -525,6 +557,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E69530FB2E5D2F2300C30EA9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E69531012E5D3A8400C30EA9 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E69530FB2E5D2F2300C30EA9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E67378E22E5C6B0D00ADBB9D /* Project object */;
 }

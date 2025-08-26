@@ -7,6 +7,9 @@
 
 import SwiftUI
 import AppKit
+#if canImport(KeyboardShortcuts)
+import KeyboardShortcuts
+#endif
 
 struct ContentView: View {
     @State private var memoText: String = ""
@@ -20,10 +23,13 @@ struct ContentView: View {
                 Text("SattoPad")
                     .font(.headline)
                 Spacer()
-                Button("Use F18") {
-                    (NSApp.delegate as? AppDelegate)?.registerF18HotKey()
-                }
-                .help("Fallback if modifiers are blocked by another app")
+                #if canImport(KeyboardShortcuts)
+                KeyboardShortcuts.Recorder("Toggle SattoPad:", name: .toggleSattoPad)
+                #else
+                Text("Add KeyboardShortcuts package to enable recorder")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                #endif
                 Button(action: { closePopover() }) {
                     Image(systemName: "xmark")
                 }
