@@ -48,7 +48,6 @@ struct OverlayPreviewView: View {
                 .padding(8)
             }
         }
-        .frame(width: OverlaySettingsStore.width, height: OverlaySettingsStore.height)
         .contentShape(Rectangle())
         .clipped()
     }

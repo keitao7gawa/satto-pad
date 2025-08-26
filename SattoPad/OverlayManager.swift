@@ -9,7 +9,7 @@ import Foundation
 import AppKit
 import SwiftUI
 
-final class OverlayManager: ObservableObject {
+final class OverlayManager: NSObject, ObservableObject {
     static let shared = OverlayManager()
 
     private var panel: NSPanel?
@@ -25,7 +25,7 @@ final class OverlayManager: ObservableObject {
     @Published var memoText: String = ""
     private var dragStartOrigin: CGPoint?
 
-    private init() {}
+    private override init() {}
 
     func update(text: String) {
         memoText = text
@@ -41,7 +41,7 @@ final class OverlayManager: ObservableObject {
         let hosting = DraggableHostingView(rootView: view)
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: OverlaySettingsStore.width, height: OverlaySettingsStore.height),
-            styleMask: [.titled, .fullSizeContentView],
+            styleMask: [.titled, .fullSizeContentView, .resizable],
             backing: .buffered,
             defer: false
         )
@@ -53,11 +53,16 @@ final class OverlayManager: ObservableObject {
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isMovableByWindowBackground = isAdjustable
+        panel.standardWindowButton(.closeButton)?.isHidden = true
+        panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        panel.standardWindowButton(.zoomButton)?.isHidden = true
         panel.becomesKeyOnlyIfNeeded = true
         panel.ignoresMouseEvents = !isAdjustable
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .transient]
+        panel.minSize = NSSize(width: 200, height: 120)
         panel.contentView = hosting
+        panel.delegate = self
         hosting.isDraggable = isAdjustable
 
         self.panel = panel
@@ -76,6 +81,15 @@ final class OverlayManager: ObservableObject {
         isAdjustable = adjustable
         panel?.ignoresMouseEvents = !adjustable
         panel?.isMovableByWindowBackground = adjustable
+        if let panel {
+            var mask = panel.styleMask
+            if adjustable {
+                mask.insert(.resizable)
+            } else {
+                mask.remove(.resizable)
+            }
+            panel.styleMask = mask
+        }
         (panel?.contentView as? DraggableHostingView<OverlayPreviewView>)?.isDraggable = adjustable
         hostingView?.rootView = OverlayPreviewView(text: memoText, adjustable: adjustable)
     }
@@ -147,6 +161,26 @@ final class OverlayManager: ObservableObject {
         let yFromTop = frame.maxY - origin.y - size.height
         let normY = yFromTop / frame.height
         return CGPoint(x: max(0, min(1, normX)), y: max(0, min(1, normY)))
+    }
+}
+
+// MARK: - NSWindowDelegate (persist overlay size when user resizes the panel)
+extension OverlayManager: NSWindowDelegate {
+    func windowDidEndLiveResize(_ notification: Notification) {
+        guard let panel = notification.object as? NSPanel else { return }
+        let newSize = panel.contentLayoutRect.size
+        OverlaySettingsStore.width = newSize.width
+        OverlaySettingsStore.height = newSize.height
+        // Re-render rootView to ensure SwiftUI frame reflects latest store values
+        hostingView?.rootView = OverlayPreviewView(text: memoText, adjustable: isAdjustable)
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        // Optionally, live-persist size while dragging
+        guard let panel = notification.object as? NSPanel else { return }
+        let newSize = panel.contentLayoutRect.size
+        OverlaySettingsStore.width = newSize.width
+        OverlaySettingsStore.height = newSize.height
     }
 }
 

@@ -14,15 +14,20 @@ final class DraggableHostingView<Content: View>: NSHostingView<Content> {
 
     override var mouseDownCanMoveWindow: Bool { isDraggable }
 
+    // Allow window edge resizing by not intercepting events near the borders
     override func hitTest(_ point: NSPoint) -> NSView? {
-        // When adjustable, capture events at the hosting view level to allow smooth dragging
         guard isDraggable else { return super.hitTest(point) }
-        return self
+        let edgeMargin: CGFloat = 8
+        let innerRect = bounds.insetBy(dx: edgeMargin, dy: edgeMargin)
+        if innerRect.contains(point) {
+            return self
+        } else {
+            return super.hitTest(point)
+        }
     }
 
     override func mouseDown(with event: NSEvent) {
         guard isDraggable else { return super.mouseDown(with: event) }
-        // Perform native window drag for smooth movement
         window?.performDrag(with: event)
         if let panel = window as? NSPanel {
             OverlayManager.shared.savePosition(for: panel)
