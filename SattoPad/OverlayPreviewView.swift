@@ -116,11 +116,32 @@ struct OverlayPreviewView: View {
                 .font(fontForHeading(level))
                 .fontWeight(.semibold)
         case let .bullet(text):
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("•")
-                Text(text)
+            // Detect GitHub-style task list: [ ] label or [x] label
+            let trimmed = text.trimmingCharacters(in: .whitespaces)
+            if trimmed.count >= 3,
+               let first = trimmed.first, first == "[",
+               let secondIndex = trimmed.index(after: trimmed.startIndex) as String.Index?,
+               secondIndex < trimmed.endIndex,
+               let thirdIndex = trimmed.index(secondIndex, offsetBy: 1, limitedBy: trimmed.endIndex),
+               thirdIndex < trimmed.endIndex,
+               trimmed[thirdIndex] == "]",
+               (trimmed[secondIndex] == " " || trimmed[secondIndex] == "x" || trimmed[secondIndex] == "X") {
+                let checked = (trimmed[secondIndex] == "x" || trimmed[secondIndex] == "X")
+                let labelStart = trimmed.index(thirdIndex, offsetBy: 1)
+                let label = trimmed[labelStart...].trimmingCharacters(in: .whitespaces)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: checked ? "checkmark.square" : "square")
+                        .foregroundStyle(.secondary)
+                    Text(label)
+                }
+                .font(.system(size: 13))
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("•")
+                    Text(text)
+                }
+                .font(.system(size: 13))
             }
-            .font(.system(size: 13))
         case let .code(code):
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(code.isEmpty ? "\u{00A0}" : code)
