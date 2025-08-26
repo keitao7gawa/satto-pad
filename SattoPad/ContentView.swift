@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var escapeKeyMonitor: Any?
     @State private var overlayOpacity: Double = OverlaySettingsStore.opacity
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var mdStore = MarkdownStore.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -49,6 +50,17 @@ struct ContentView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 #endif
+
+                Menu {
+                    Button("保存先を選択…") { mdStore.selectSaveLocation() }
+                    Button("ファイルから再読み込み") { mdStore.reloadFromDisk() }
+                    if mdStore.isSaving {
+                        Text("保存中…")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .menuStyle(.borderlessButton)
                 Button(action: { closePopover() }) {
                     Image(systemName: "xmark")
                 }
@@ -76,6 +88,8 @@ struct ContentView: View {
             OverlayManager.shared.setAdjustable(true)
             OverlayManager.shared.update(text: memoText)
             OverlayManager.shared.show()
+            // Load memo from disk
+            mdStore.loadOnLaunch()
             escapeKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 // keyCode 53 == Escape
                 if event.keyCode == 53 {
@@ -95,6 +109,12 @@ struct ContentView: View {
             OverlayManager.shared.setAdjustable(false)
         }
         .onChange(of: memoText) { _, newValue in
+            OverlayManager.shared.update(text: newValue)
+            mdStore.setTextAndScheduleAutosave(newValue)
+        }
+        .onChange(of: mdStore.text) { _, newValue in
+            // Update editor with disk content when store loads
+            memoText = newValue
             OverlayManager.shared.update(text: newValue)
         }
         .onChange(of: overlayOpacity) { _, newValue in
