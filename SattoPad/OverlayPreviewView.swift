@@ -54,8 +54,15 @@ struct OverlayPreviewView: View {
     }
 
     // MARK: - Minimal markdown renderer (headings, bullets, code, paragraphs)
-    private struct MDLine: Identifiable { let id = UUID(); let kind: Kind
-        enum Kind { case heading(Int, String), bullet(String), code(String), paragraph(String) }
+    private struct MDLine: Identifiable {
+        let id = UUID()
+        let kind: Kind
+        enum Kind {
+            case heading(Int, String)
+            case bullet(Int, String) // level, text
+            case code(String)
+            case paragraph(String)
+        }
     }
 
     private func parseMarkdownBlocks(text: String) -> [MDLine] {
@@ -84,8 +91,9 @@ struct OverlayPreviewView: View {
             if let heading = parseHeading(line) {
                 lines.append(heading)
             } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
+                let level = leadingIndentLevel(for: rawLine)
                 let content = String(line.dropFirst(2)).trimmingCharacters(in: .whitespaces)
-                lines.append(MDLine(kind: .bullet(content)))
+                lines.append(MDLine(kind: .bullet(level, content)))
             } else {
                 lines.append(MDLine(kind: .paragraph(rawLine)))
             }
@@ -95,6 +103,16 @@ struct OverlayPreviewView: View {
             lines.append(MDLine(kind: .code(codeBuffer.joined(separator: "\n"))))
         }
         return lines
+    }
+
+    private func leadingIndentLevel(for rawLine: String) -> Int {
+        var spaces = 0
+        for ch in rawLine {
+            if ch == " " { spaces += 1 }
+            else if ch == "\t" { spaces += 4 }
+            else { break }
+        }
+        return max(0, min(8, spaces / 2))
     }
 
     private func parseHeading(_ line: String) -> MDLine? {
@@ -118,7 +136,7 @@ struct OverlayPreviewView: View {
             Text(text)
                 .font(fontForHeading(level))
                 .fontWeight(.semibold)
-        case let .bullet(text):
+        case let .bullet(level, text):
             // Detect GitHub-style task list: [ ] label or [x] label
             let trimmed = text.trimmingCharacters(in: .whitespaces)
             if trimmed.count >= 3,
@@ -138,12 +156,14 @@ struct OverlayPreviewView: View {
                     Text(label)
                 }
                 .font(.system(size: 13))
+                .padding(.leading, CGFloat(level) * 14)
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("•")
                     Text(text)
                 }
                 .font(.system(size: 13))
+                .padding(.leading, CGFloat(level) * 14)
             }
         case let .code(code):
             ScrollView(.horizontal, showsIndicators: false) {
