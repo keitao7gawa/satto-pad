@@ -1,0 +1,161 @@
+---
+alwaysApply: true
+---
+# SattoPad ホットキー設定（KeyboardShortcuts 採用）開発計画
+
+KeyboardShortcuts（`https://github.com/sindresorhus/KeyboardShortcuts`）を正式採用して、グローバルショートカットの「記録・保存・発火」を安定化します。既存の独自実装（Carbon直接・EventTap・GlobalMonitor）は段階的に撤去し、ライブラリを一次正とします。
+
+## 目的/スコープ
+- 目的: ユーザーが安定してホットキーを設定でき、常時前面アプリでトグル可能にする
+- スコープ:
+  - SPM で KeyboardShortcuts を追加
+  - 設定UIに `KeyboardShortcuts.Recorder` を導入
+  - 発火は `KeyboardShortcuts.onKeyDown` を使用
+  - 既定値/リセット、保存/復元（ライブラリの UserDefaults 持続）
+- 非スコープ:
+  - 複数ホットキーの同時管理
+  - ショートカット別の複数アクション
+
+## 採用理由（方針転換）
+- クロージャや権限周りの落とし穴（Carbon + EventTap 直叩き）を回避し、動作の一貫性を確保
+- 録音UI（Recorder）が標準提供され、記録・保存・復元の UX が安定
+- ライブラリ側で macOS の仕様変更に追随
+
+## マイルストーン
+- KS1: 依存追加（SPM）と最小動作
+  - `KeyboardShortcuts` をプロジェクトに追加
+  - `AppDelegate` に `KeyboardShortcuts.onKeyDown(for: .togglePopover)` を登録
+  - 既定値（Cmd+Shift+T）を `KeyboardShortcuts.setShortcut` で初期化（未設定時のみ）
+- KS2: 設定UI（Recorder）
+  - `HotkeySettingsView` に `KeyboardShortcuts.Recorder(for: .togglePopover)` を配置
+  - `Reset`/`Clear` 操作を提供（`setShortcut`/`reset`）
+  - 現在設定の表示（`getShortcut`）
+- KS3: 旧実装の整理
+  - `HotkeyStorage`/独自 Record ロジック/Carbon直登記/EventTap/GlobalMonitor を削除 or 非活性化
+  - 競合する二重登録を確実に除去
+- KS4: UX 微調整
+  - ガイダンス文言（安全な組み合わせの提案、衝突時の注意）
+  - 既定復帰ボタン、無効化（クリア）ボタン
+- KS5: QA/回帰
+  - 代表的アプリ前面での発火確認
+  - 再起動後の復元確認
+  - メニューが開いている最中でも動作（ライブラリ対応範囲の確認）
+
+## 受け入れ基準
+- 設定画面で Recorder によってショートカットを記録できる
+- 他アプリ前面でもショートカットでポップオーバーをトグルできる
+- 既定値（Cmd+Shift+T）に戻す/空にする（無効化）が機能する
+- アプリ再起動後も設定が保持され、即動作する
+- 重複登録や多重発火が発生しない（旧実装を停止済）
+
+## 実装詳細（公式README準拠）
+- パッケージ追加
+  - SPM URL: `https://github.com/sindresorhus/KeyboardShortcuts`
+  - 最低対応 macOS: 10.15+（推奨 13+/14+）
+- 識別子
+  - `extension KeyboardShortcuts.Name { static let toggleSattoPad = Self("toggleSattoPad") }`
+- 既定値
+  - アプリ起動時に未設定なら開発中のみ既定を設定（公開ビルドでは強制既定を避ける）
+  - 例: `#if DEBUG KeyboardShortcuts.setShortcut(.init(.t, modifiers: [.command, .shift]), for: .toggleSattoPad) #endif`
+- 発火
+  - `KeyboardShortcuts.onKeyDown(for: .toggleSattoPad) { togglePopover(nil) }`（または `.onKeyUp`）
+- 設定UI
+  - SwiftUI: `KeyboardShortcuts.Recorder("Toggle SattoPad:", name: .toggleSattoPad)` または `Recorder(for: .toggleSattoPad)`
+  - Cocoa: `KeyboardShortcuts.RecorderCocoa(for: .toggleSattoPad)` も利用可能
+  - 付随ボタン: `Reset`（既定に戻す）、`Clear`（無効化）
+  - 現在値の表示（`getShortcut`で表示用文字列を組立）
+- 旧実装の扱い
+  - Carbon直/CGEventTap/GlobalMonitor/独自 HotkeyStorage を削除 or コンパイル条件で無効化
+  - 競合や二重発火の温床を除去
+
+### コード例
+
+`KeyboardShortcutsSupport.swift`
+
+```swift
+import KeyboardShortcuts
+
+extension KeyboardShortcuts.Name {
+  static let toggleSattoPad = Self("toggleSattoPad")
+}
+
+enum KeyboardShortcutsDefaults {
+  static func ensureDefaultIfNeeded() {
+    #if DEBUG
+    if KeyboardShortcuts.getShortcut(for: .toggleSattoPad) == nil {
+      KeyboardShortcuts.setShortcut(.init(.t, modifiers: [.command, .shift]), for: .toggleSattoPad)
+    }
+    #endif
+  }
+}
+```
+
+`AppDelegate.swift`（またはAppの初期化箇所）
+
+```swift
+import KeyboardShortcuts
+
+func applicationDidFinishLaunching(...) {
+  KeyboardShortcutsDefaults.ensureDefaultIfNeeded()
+  KeyboardShortcuts.onKeyDown(for: .toggleSattoPad) { [weak self] in
+    self?.togglePopover(nil)
+  }
+}
+```
+
+`SettingsView.swift`（SwiftUI）
+
+```swift
+import SwiftUI
+import KeyboardShortcuts
+
+struct SettingsView: View {
+  var body: some View {
+    Form {
+      KeyboardShortcuts.Recorder("Toggle SattoPad:", name: .toggleSattoPad)
+      Button("Clear") { KeyboardShortcuts.reset(.toggleSattoPad) }
+    }
+    .padding()
+  }
+}
+```
+
+## UX要件
+- 明確な一行説明: 「このショートカットで SattoPad を表示/非表示します」
+- 衝突しづらい安全な組み合わせのヘルプ（例: Ctrl+Option+Cmd+Y/U/P など）
+- `Reset`/`Clear` は1クリックで反映
+- 録音時に押下中の修飾キーは Recorder 側で視覚表示
+ - 初回起動では既定値を強制せず、ウェルカム/設定導線でユーザーに設定を促す（READMEの推奨）
+
+## テスト計画
+- ショートカットの記録→即発火（Finder/Safari/Xcode等の前面）
+- 再起動後の復元
+- `Reset`/`Clear` の動作
+- Cmd+Shift+T が他アプリに奪われる場合、別組み合わせで正常に動作
+
+## 既知のリスク/対策
+- システム/他アプリとの衝突: Recorderでは検出不可な場合がある→ヘルプで三修飾＋文字を推奨
+- 旧実装の残骸による多重発火: 完全撤去・無効化をタスク化
+- 企業管理端末の権限制約: KeyboardShortcuts採用で多くの環境で改善が見込まれるが、検証端末で要確認
+ - メディアキーは非対応（サンドボックス互換性のため）。必要なら非サンドボックス環境で別ライブラリ（`MediaKeyTap`）を検討
+ - 権限ダイアログ: ライブラリ自体は追加の権限ダイアログを出さない
+
+## 移行（旧実装→KeyboardShortcuts）
+- 段階1: KeyboardShortcuts を併用（発火/Recorder）
+- 段階2: 旧API（Carbon/EventTap/GlobalMonitor）のコードパスをビルドから除外
+- 段階3: 旧ファイル/設定（`HotkeyStorage` 等）を削除
+
+## ローカライズ
+- ライブラリ側のローカライズに追従。追加言語が必要になればPR方針に合わせて貢献
+
+## 作業タスク（高粒度）
+1. SPM 追加: KeyboardShortcuts をプロジェクトに導入
+2. AppDelegate: `onKeyDown` 登録＋既定値初期化、旧登録ロジックの停止
+3. 設定UI: Recorder 導入、Reset/Clear/現在値表示
+4. 旧実装コードの無効化/削除（競合排除）
+5. QA（代表アプリ前面、再起動、Reset/Clear、衝突時の代替案）
+
+## 完了の定義
+- KeyboardShortcuts ベースで記録/保存/復元/発火が安定して機能
+- 旧実装の副作用がない（多重発火・権限ダイアログなど）
+- ユーザーは設定画面から直感的にショートカットを更新可能
