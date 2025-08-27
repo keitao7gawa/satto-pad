@@ -192,7 +192,7 @@ struct ContentView: View {
             OverlaySettingsStore.opacity = rounded
         }
         .onChange(of: overlayFontSize) { _, newValue in
-            let clamped = max(12.0, min(24.0, newValue))
+            let clamped = max(8.0, min(36.0, newValue))
             if abs(clamped - overlayFontSize) > 0.000_001 {
                 overlayFontSize = clamped
             }
@@ -253,7 +253,7 @@ struct ContentView: View {
     }
 
     private func stepFont(_ delta: Double) {
-        overlayFontSize = max(12.0, min(24.0, overlayFontSize + delta))
+        overlayFontSize = max(8.0, min(36.0, overlayFontSize + delta))
     }
 }
 
