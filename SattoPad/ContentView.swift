@@ -31,25 +31,25 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 8) {
             ViewThatFits(in: .horizontal) {
                 // Variant 1: Single-row with inline hotkey recorder
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Spacer(minLength: 0)
                     VStack(spacing: 2) {
                         Text("透明度 \(Int((overlayOpacity * 100).rounded()))%")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
-                            .frame(width: 140)
+                            .frame(width: 110)
                             .multilineTextAlignment(.center)
                         NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
-                            .frame(width: 140)
+                            .frame(width: 110)
                     }
-                    HStack(spacing: 6) {
-                        Button(action: { stepFont(-1) }) { Image(systemName: "textformat.size.smaller") }
+                    HStack(spacing: 4) {
+                        Button(action: { stepFont(-1) }) { Image(systemName: "textformat.size.smaller").imageScale(.small) }
                         Text("\(Int(overlayFontSize))pt")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                            .frame(minWidth: 36)
-                        Button(action: { stepFont(+1) }) { Image(systemName: "textformat.size.larger") }
+                            .frame(minWidth: 28)
+                        Button(action: { stepFont(+1) }) { Image(systemName: "textformat.size.larger").imageScale(.small) }
                     }
                     #if canImport(KeyboardShortcuts)
                     VStack(alignment: .leading, spacing: 2) {
@@ -59,48 +59,62 @@ struct ContentView: View {
                         KeyboardShortcuts.Recorder(for: .toggleSattoPad)
                     }
                     #endif
-                    Menu {
-                        Button("保存先を選択…") { requestSelectSaveLocation() }
-                        Button("ファイルから再読み込み") { requestReload() }
-                        if mdStore.isSaving { Text("保存中…") }
-                    } label: { Image(systemName: "ellipsis.circle") }
-                    .menuStyle(.borderlessButton)
-                    Button(action: { closePopover() }) { Image(systemName: "xmark") }
-                        .buttonStyle(.borderless)
+                    HStack(spacing: 2) {
+                        Menu {
+                            Button("保存先を選択…") { requestSelectSaveLocation() }
+                            Button("ファイルから再読み込み") { requestReload() }
+                            if mdStore.isSaving { Text("保存中…") }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.system(size: 12))
+                                .frame(width: 18, height: 18)
+                                .contentShape(Circle())
+                        }
+                        .menuStyle(.borderlessButton)
+                        Button(action: { closePopover() }) { Image(systemName: "xmark") }
+                            .buttonStyle(.borderless)
+                    }
                 }
 
-                // Variant 2: Compact header without inline hotkey (hotkey in menu)
-                HStack(spacing: 8) {
+                // Variant 2: Compact header single-row
+                HStack(spacing: 6) {
                     Spacer(minLength: 0)
                     VStack(spacing: 2) {
                         Text("透明度 \(Int((overlayOpacity * 100).rounded()))%")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
-                            .frame(width: 140)
+                            .frame(width: 110)
                             .multilineTextAlignment(.center)
                         NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
-                            .frame(width: 140)
+                            .frame(width: 110)
                     }
-                    HStack(spacing: 6) {
-                        Button(action: { stepFont(-1) }) { Image(systemName: "textformat.size.smaller") }
+                    HStack(spacing: 4) {
+                        Button(action: { stepFont(-1) }) { Image(systemName: "textformat.size.smaller").imageScale(.small) }
                         Text("\(Int(overlayFontSize))pt")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                            .frame(minWidth: 36)
-                        Button(action: { stepFont(+1) }) { Image(systemName: "textformat.size.larger") }
+                            .frame(minWidth: 28)
+                        Button(action: { stepFont(+1) }) { Image(systemName: "textformat.size.larger").imageScale(.small) }
                     }
-                    Menu {
-                        Button("保存先を選択…") { requestSelectSaveLocation() }
-                        Button("ファイルから再読み込み") { requestReload() }
-                        #if canImport(KeyboardShortcuts)
-                        Button("ホットキーを設定…") { showHotkeySheet = true }
-                        #endif
-                        if mdStore.isSaving { Text("保存中…") }
-                    } label: { Image(systemName: "ellipsis.circle") }
-                    .menuStyle(.borderlessButton)
-                    Button(action: { closePopover() }) { Image(systemName: "xmark") }
-                        .buttonStyle(.borderless)
+                    #if canImport(KeyboardShortcuts)
+                    KeyboardShortcuts.Recorder(for: .toggleSattoPad)
+                    #endif
+                    HStack(spacing: 2) {
+                        Menu {
+                            Button("保存先を選択…") { requestSelectSaveLocation() }
+                            Button("ファイルから再読み込み") { requestReload() }
+                            if mdStore.isSaving { Text("保存中…") }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.system(size: 12))
+                                .frame(width: 18, height: 18)
+                                .contentShape(Circle())
+                        }
+                        .menuStyle(.borderlessButton)
+                        Button(action: { closePopover() }) { Image(systemName: "xmark") }
+                            .buttonStyle(.borderless)
+                    }
                 }
             }
             .padding(.horizontal, 8)
