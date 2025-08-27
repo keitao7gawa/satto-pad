@@ -49,6 +49,7 @@ final class MarkdownStore: ObservableObject {
 
     func saveNow() {
         pendingSaveWorkItem?.cancel()
+        DispatchQueue.main.async { [weak self] in self?.pendingSaveWorkItem = nil }
         performSave()
     }
 
@@ -121,8 +122,11 @@ final class MarkdownStore: ObservableObject {
 
     private func performSave() {
         let currentText = text
+        // この保存サイクル開始時点でペンディングをクリア
+        DispatchQueue.main.async { [weak self] in self?.pendingSaveWorkItem = nil }
         // 差分なしなら保存スキップ
         if currentText == lastSavedText {
+            isSavingOnMain(false)
             return
         }
         isSavingOnMain(true)
@@ -259,7 +263,9 @@ final class MarkdownStore: ObservableObject {
 
     // Expose pending changes state for UI confirm
     var hasPendingChanges: Bool {
-        return text != lastSavedText || pendingSaveWorkItem != nil
+        // pendingSaveWorkItem が残っていても、テキスト差分が無ければ未保存扱いにしない
+        if text == lastSavedText { return false }
+        return true
     }
 
     private func readCurrentFile() {

@@ -167,7 +167,11 @@ struct ContentView: View {
             Text("保存されていない変更があります。破棄して再読み込みしますか？")
         }
         .alert("未保存の変更", isPresented: $showConfirmChangeLocation) {
-            Button("破棄して保存先を変更", role: .destructive) { mdStore.selectSaveLocation() }
+            Button("破棄して保存先を変更", role: .destructive) {
+                // 直前に保存を明示し、未保存扱いを最小化
+                mdStore.saveNow()
+                mdStore.selectSaveLocation()
+            }
             Button("キャンセル", role: .cancel) { }
         } message: {
             Text("保存されていない変更があります。破棄して保存先を変更しますか？")
