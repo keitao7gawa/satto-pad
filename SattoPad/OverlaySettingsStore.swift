@@ -2,34 +2,38 @@
 //  OverlaySettingsStore.swift
 //  SattoPad
 //
-//  Persists overlay size and opacity settings.
+//  Persists overlay size and opacity settings with improved key management.
 //
 
 import Foundation
 
 struct OverlaySettingsStore {
-    private static let widthKey = "sattoPad.overlay.width"
-    private static let heightKey = "sattoPad.overlay.height"
-    private static let opacityKey = "sattoPad.overlay.opacity"
-    private static let fontSizeKey = "sattoPad.overlay.fontSize"
-
-    static var width: CGFloat {
-        get { (UserDefaults.standard.object(forKey: widthKey) as? CGFloat) ?? 360 }
-        set { UserDefaults.standard.set(newValue, forKey: widthKey) }
+    // MARK: - UserDefaults Keys (namespaced)
+    private enum Keys {
+        static let width = "sattoPad.overlay.width"
+        static let height = "sattoPad.overlay.height"
+        static let opacity = "sattoPad.overlay.opacity"
+        static let fontSize = "sattoPad.overlay.fontSize"
     }
-
-    static var height: CGFloat {
-        get { (UserDefaults.standard.object(forKey: heightKey) as? CGFloat) ?? 220 }
-        set { UserDefaults.standard.set(newValue, forKey: heightKey) }
+    
+    // MARK: - Default Values
+    private enum Defaults {
+        static let width: CGFloat = 360
+        static let height: CGFloat = 220
+        static let opacity: Double = 0.95
+        static let fontSize: Double = 13.0
     }
-
-    static var opacity: Double {
-        get { (UserDefaults.standard.object(forKey: opacityKey) as? Double) ?? 0.95 }
-        set { UserDefaults.standard.set(newValue, forKey: opacityKey) }
-    }
-
-    static var fontSize: Double {
-        get { (UserDefaults.standard.object(forKey: fontSizeKey) as? Double) ?? 13.0 }
-        set { UserDefaults.standard.set(newValue, forKey: fontSizeKey) }
-    }
+    
+    // MARK: - Properties with Property Wrapper
+    @UserDefaultsProperty(key: Keys.width, defaultValue: Defaults.width)
+    static var width: CGFloat
+    
+    @UserDefaultsProperty(key: Keys.height, defaultValue: Defaults.height)
+    static var height: CGFloat
+    
+    @UserDefaultsProperty(key: Keys.opacity, defaultValue: Defaults.opacity)
+    static var opacity: Double
+    
+    @UserDefaultsProperty(key: Keys.fontSize, defaultValue: Defaults.fontSize)
+    static var fontSize: Double
 }
