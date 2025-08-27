@@ -11,6 +11,7 @@
 ## User-specific files
 *.xcuserdatad
 *.xcworkspace
+xcuserdata/
 
 ## Build generated
 build/
