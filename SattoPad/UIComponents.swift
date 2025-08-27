@@ -71,7 +71,6 @@ struct RepeatButton<Label: View>: View {
 
     var body: some View {
         Button(action: { onTap() }) { label() }
-            .buttonStyle(.borderless)
             .simultaneousGesture(DragGesture(minimumDistance: 0)
                 .onChanged { _ in
                     if !isPressing {
