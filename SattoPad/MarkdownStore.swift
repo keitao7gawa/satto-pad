@@ -210,9 +210,12 @@ final class MarkdownStore: ObservableObject {
         if let path = defaults.string(forKey: pathKey), !path.isEmpty {
             return URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
         }
-        // Default path: ~/Documents/SattoPad.md
+        // Default path: ~/Documents/SattoPad/SattoPad.md
         let home = NSHomeDirectory()
-        let url = URL(fileURLWithPath: home).appendingPathComponent("Documents").appendingPathComponent("SattoPad.md")
+        let url = URL(fileURLWithPath: home)
+            .appendingPathComponent("Documents")
+            .appendingPathComponent("SattoPad")
+            .appendingPathComponent("SattoPad.md")
         return url
     }
 
