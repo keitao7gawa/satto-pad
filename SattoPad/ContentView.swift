@@ -16,6 +16,7 @@ struct ContentView: View {
     @FocusState private var isEditorFocused: Bool
     @State private var escapeKeyMonitor: Any?
     @State private var overlayOpacity: Double = OverlaySettingsStore.opacity
+    @State private var overlayFontSize: Double = OverlaySettingsStore.fontSize
     @Environment(\.dismiss) private var dismiss
     @StateObject private var mdStore = MarkdownStore.shared
     @State private var showConfirmReload: Bool = false
@@ -41,6 +42,14 @@ struct ContentView: View {
                             .multilineTextAlignment(.center)
                         NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
                             .frame(width: 140)
+                    }
+                    HStack(spacing: 6) {
+                        Button(action: { stepFont(-1) }) { Image(systemName: "textformat.size.smaller") }
+                        Text("\(Int(overlayFontSize))pt")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 36)
+                        Button(action: { stepFont(+1) }) { Image(systemName: "textformat.size.larger") }
                     }
                     #if canImport(KeyboardShortcuts)
                     VStack(alignment: .leading, spacing: 2) {
@@ -72,6 +81,14 @@ struct ContentView: View {
                             .multilineTextAlignment(.center)
                         NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
                             .frame(width: 140)
+                    }
+                    HStack(spacing: 6) {
+                        Button(action: { stepFont(-1) }) { Image(systemName: "textformat.size.smaller") }
+                        Text("\(Int(overlayFontSize))pt")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 36)
+                        Button(action: { stepFont(+1) }) { Image(systemName: "textformat.size.larger") }
                     }
                     Menu {
                         Button("保存先を選択…") { requestSelectSaveLocation() }
@@ -160,6 +177,13 @@ struct ContentView: View {
             }
             OverlaySettingsStore.opacity = rounded
         }
+        .onChange(of: overlayFontSize) { _, newValue in
+            let clamped = max(12.0, min(24.0, newValue))
+            if abs(clamped - overlayFontSize) > 0.000_001 {
+                overlayFontSize = clamped
+            }
+            OverlaySettingsStore.fontSize = clamped
+        }
         .alert("未保存の変更", isPresented: $showConfirmReload) {
             Button("破棄して再読み込み", role: .destructive) { mdStore.reloadFromDisk() }
             Button("キャンセル", role: .cancel) { }
@@ -212,6 +236,10 @@ struct ContentView: View {
         } else {
             mdStore.selectSaveLocation()
         }
+    }
+
+    private func stepFont(_ delta: Double) {
+        overlayFontSize = max(12.0, min(24.0, overlayFontSize + delta))
     }
 }
 

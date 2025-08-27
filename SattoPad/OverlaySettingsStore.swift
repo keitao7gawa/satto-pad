@@ -11,6 +11,7 @@ struct OverlaySettingsStore {
     private static let widthKey = "sattoPad.overlay.width"
     private static let heightKey = "sattoPad.overlay.height"
     private static let opacityKey = "sattoPad.overlay.opacity"
+    private static let fontSizeKey = "sattoPad.overlay.fontSize"
 
     static var width: CGFloat {
         get { (UserDefaults.standard.object(forKey: widthKey) as? CGFloat) ?? 360 }
@@ -25,5 +26,10 @@ struct OverlaySettingsStore {
     static var opacity: Double {
         get { (UserDefaults.standard.object(forKey: opacityKey) as? Double) ?? 0.95 }
         set { UserDefaults.standard.set(newValue, forKey: opacityKey) }
+    }
+
+    static var fontSize: Double {
+        get { (UserDefaults.standard.object(forKey: fontSizeKey) as? Double) ?? 13.0 }
+        set { UserDefaults.standard.set(newValue, forKey: fontSizeKey) }
     }
 }

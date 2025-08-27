@@ -13,6 +13,7 @@ struct OverlayPreviewView: View {
     let adjustable: Bool
     @AppStorage("sattoPad.overlay.opacity") private var overlayOpacity: Double = 0.95
     @State private var dragOffset: CGSize = .zero
+    @AppStorage("sattoPad.overlay.fontSize") private var baseFontSize: Double = OverlaySettingsStore.fontSize
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -154,14 +155,14 @@ struct OverlayPreviewView: View {
                         .foregroundStyle(.secondary)
                     Text(label)
                 }
-                .font(.system(size: 13))
+                .font(.system(size: CGFloat(baseFontSize)))
                 .padding(.leading, CGFloat(level) * 14)
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("•")
                     Text(text)
                 }
-                .font(.system(size: 13))
+                .font(.system(size: CGFloat(baseFontSize)))
                 .padding(.leading, CGFloat(level) * 14)
             }
         case let .code(code):
@@ -174,18 +175,18 @@ struct OverlayPreviewView: View {
             }
         case let .paragraph(text):
             Text(text)
-                .font(.system(size: 13))
+                .font(.system(size: CGFloat(baseFontSize)))
                 .lineSpacing(2)
         }
     }
 
     private func fontForHeading(_ level: Int) -> Font {
         switch level {
-        case 1: return .system(size: 22, weight: .bold)
-        case 2: return .system(size: 20, weight: .bold)
-        case 3: return .system(size: 18, weight: .semibold)
-        case 4: return .system(size: 16, weight: .semibold)
-        default: return .system(size: 14, weight: .semibold)
+        case 1: return .system(size: CGFloat(baseFontSize + 9), weight: .bold)
+        case 2: return .system(size: CGFloat(baseFontSize + 7), weight: .bold)
+        case 3: return .system(size: CGFloat(baseFontSize + 5), weight: .semibold)
+        case 4: return .system(size: CGFloat(baseFontSize + 3), weight: .semibold)
+        default: return .system(size: CGFloat(baseFontSize + 1), weight: .semibold)
         }
     }
 }
