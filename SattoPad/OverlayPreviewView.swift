@@ -3,6 +3,7 @@
 //  SattoPad
 //
 //  SwiftUI preview content for the overlay window.
+//  Uses MarkdownRenderer and OverlayTypography for consistent rendering.
 //
 
 import SwiftUI
@@ -29,7 +30,7 @@ struct OverlayPreviewView: View {
                         .padding(12)
                 } else {
                     VStack(alignment: .leading, spacing: 6) {
-                        ForEach(parseMarkdownBlocks(text: text)) { block in
+                        ForEach(MarkdownRenderer.parseMarkdownBlocks(text: text)) { block in
                             blockView(block)
                         }
                     }
@@ -53,89 +54,14 @@ struct OverlayPreviewView: View {
         .clipped()
     }
 
-    // MARK: - Minimal markdown renderer (headings, bullets, code, paragraphs)
-    private struct MDLine: Identifiable {
-        let id = UUID()
-        let kind: Kind
-        enum Kind {
-            case heading(Int, String)
-            case bullet(Int, String) // level, text
-            case code(String)
-            case paragraph(String)
-        }
-    }
 
-    private func parseMarkdownBlocks(text: String) -> [MDLine] {
-        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
-        var lines: [MDLine] = []
-        var inCode = false
-        var codeBuffer: [String] = []
-        for rawLine in normalized.components(separatedBy: "\n") {
-            let line = rawLine.trimmingCharacters(in: .whitespaces)
-            if line.hasPrefix("```") {
-                if inCode {
-                    // End code block
-                    lines.append(MDLine(kind: .code(codeBuffer.joined(separator: "\n"))))
-                    codeBuffer.removeAll()
-                    inCode = false
-                } else {
-                    inCode = true
-                }
-                continue
-            }
-            if inCode {
-                codeBuffer.append(rawLine)
-                continue
-            }
-            if line.isEmpty { continue }
-            if let heading = parseHeading(line) {
-                lines.append(heading)
-            } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
-                let level = leadingIndentLevel(for: rawLine)
-                let content = String(line.dropFirst(2)).trimmingCharacters(in: .whitespaces)
-                lines.append(MDLine(kind: .bullet(level, content)))
-            } else {
-                lines.append(MDLine(kind: .paragraph(rawLine)))
-            }
-        }
-        // Close dangling code block
-        if inCode {
-            lines.append(MDLine(kind: .code(codeBuffer.joined(separator: "\n"))))
-        }
-        return lines
-    }
-
-    private func leadingIndentLevel(for rawLine: String) -> Int {
-        var spaces = 0
-        for ch in rawLine {
-            if ch == " " { spaces += 1 }
-            else if ch == "\t" { spaces += 4 }
-            else { break }
-        }
-        return max(0, min(8, spaces / 2))
-    }
-
-    private func parseHeading(_ line: String) -> MDLine? {
-        var level = 0
-        var idx = line.startIndex
-        while idx < line.endIndex && line[idx] == "#" && level < 6 {
-            level += 1
-            idx = line.index(after: idx)
-        }
-        if level > 0 {
-            let content = line[idx...].trimmingCharacters(in: .whitespaces)
-            return MDLine(kind: .heading(level, String(content)))
-        }
-        return nil
-    }
 
     @ViewBuilder
-    private func blockView(_ block: MDLine) -> some View {
+    private func blockView(_ block: MarkdownRenderer.MDLine) -> some View {
         switch block.kind {
         case let .heading(level, text):
             Text(text)
-                .font(fontForHeading(level))
-                .fontWeight(.semibold)
+                .font(OverlayTypography.fontForHeading(level, baseSize: baseFontSize))
         case let .bullet(level, text):
             // Detect GitHub-style task list: [ ] label or [x] label
             let trimmed = text.trimmingCharacters(in: .whitespaces)
@@ -150,43 +76,35 @@ struct OverlayPreviewView: View {
                 let checked = (trimmed[secondIndex] == "x" || trimmed[secondIndex] == "X")
                 let labelStart = trimmed.index(thirdIndex, offsetBy: 1)
                 let label = trimmed[labelStart...].trimmingCharacters(in: .whitespaces)
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: OverlayTypography.taskListSpacing) {
                     Image(systemName: checked ? "checkmark.square" : "square")
                         .foregroundStyle(.secondary)
                     Text(label)
                 }
-                .font(.system(size: CGFloat(baseFontSize)))
-                .padding(.leading, CGFloat(level) * 14)
+                .font(OverlayTypography.fontForBody(baseSize: baseFontSize))
+                .padding(.leading, CGFloat(level) * OverlayTypography.bulletIndent)
             } else {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: OverlayTypography.bulletSpacing) {
                     Text("•")
                     Text(text)
                 }
-                .font(.system(size: CGFloat(baseFontSize)))
-                .padding(.leading, CGFloat(level) * 14)
+                .font(OverlayTypography.fontForBody(baseSize: baseFontSize))
+                .padding(.leading, CGFloat(level) * OverlayTypography.bulletIndent)
             }
         case let .code(code):
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(code.isEmpty ? "\u{00A0}" : code)
-                    .font(.system(size: 12, design: .monospaced))
-                    .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .windowBackgroundColor)))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.2)))
+                    .font(OverlayTypography.fontForCode())
+                    .padding(OverlayTypography.codeBlockPadding)
+                    .background(RoundedRectangle(cornerRadius: OverlayTypography.codeBlockCornerRadius).fill(Color(nsColor: .windowBackgroundColor)))
+                    .overlay(RoundedRectangle(cornerRadius: OverlayTypography.codeBlockCornerRadius).stroke(Color.secondary.opacity(0.2)))
             }
         case let .paragraph(text):
             Text(text)
-                .font(.system(size: CGFloat(baseFontSize)))
-                .lineSpacing(2)
+                .font(OverlayTypography.fontForBody(baseSize: baseFontSize))
+                .lineSpacing(OverlayTypography.lineSpacing)
         }
     }
 
-    private func fontForHeading(_ level: Int) -> Font {
-        switch level {
-        case 1: return .system(size: CGFloat(baseFontSize + 9), weight: .bold)
-        case 2: return .system(size: CGFloat(baseFontSize + 7), weight: .bold)
-        case 3: return .system(size: CGFloat(baseFontSize + 5), weight: .semibold)
-        case 4: return .system(size: CGFloat(baseFontSize + 3), weight: .semibold)
-        default: return .system(size: CGFloat(baseFontSize + 1), weight: .semibold)
-        }
-    }
+
 }
