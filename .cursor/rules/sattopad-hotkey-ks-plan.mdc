@@ -1,5 +1,5 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
 # SattoPad ホットキー設定（KeyboardShortcuts 採用）開発計画
 
