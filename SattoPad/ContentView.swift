@@ -7,6 +7,8 @@
 
 import SwiftUI
 import AppKit
+// Shared UI components and constants
+import CoreGraphics
 #if canImport(KeyboardShortcuts)
 import KeyboardShortcuts
 #endif
@@ -29,94 +31,13 @@ struct ContentView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ViewThatFits(in: .horizontal) {
-                // Variant 1: Single-row with inline hotkey recorder
-                HStack(spacing: 6) {
-                    Spacer(minLength: 0)
-                    VStack(spacing: 2) {
-                        Text("透明度 \(Int((overlayOpacity * 100).rounded()))%")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                            .frame(width: 110)
-                            .multilineTextAlignment(.center)
-                        NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
-                            .frame(width: 110)
-                    }
-                    HStack(spacing: 4) {
-                        Button(action: { stepFont(-1) }) { Image(systemName: "textformat.size.smaller").imageScale(.small) }
-                        Text("\(Int(overlayFontSize))pt")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .frame(minWidth: 28)
-                        Button(action: { stepFont(+1) }) { Image(systemName: "textformat.size.larger").imageScale(.small) }
-                    }
-                    #if canImport(KeyboardShortcuts)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Hotkey")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        KeyboardShortcuts.Recorder(for: .toggleSattoPad)
-                    }
-                    #endif
-                    HStack(spacing: 2) {
-                        Menu {
-                            Button("保存先を選択…") { requestSelectSaveLocation() }
-                            Button("ファイルから再読み込み") { requestReload() }
-                            if mdStore.isSaving { Text("保存中…") }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .font(.system(size: 12))
-                                .frame(width: 18, height: 18)
-                                .contentShape(Circle())
-                        }
-                        .menuStyle(.borderlessButton)
-                        Button(action: { closePopover() }) { Image(systemName: "xmark") }
-                            .buttonStyle(.borderless)
-                    }
-                }
-
-                // Variant 2: Compact header single-row
-                HStack(spacing: 6) {
-                    Spacer(minLength: 0)
-                    VStack(spacing: 2) {
-                        Text("透明度 \(Int((overlayOpacity * 100).rounded()))%")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                            .frame(width: 110)
-                            .multilineTextAlignment(.center)
-                        NativeSlider(value: $overlayOpacity, range: 0.05...1.0, isContinuous: true)
-                            .frame(width: 110)
-                    }
-                    HStack(spacing: 4) {
-                        Button(action: { stepFont(-1) }) { Image(systemName: "textformat.size.smaller").imageScale(.small) }
-                        Text("\(Int(overlayFontSize))pt")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .frame(minWidth: 28)
-                        Button(action: { stepFont(+1) }) { Image(systemName: "textformat.size.larger").imageScale(.small) }
-                    }
-                    #if canImport(KeyboardShortcuts)
-                    KeyboardShortcuts.Recorder(for: .toggleSattoPad)
-                    #endif
-                    HStack(spacing: 2) {
-                        Menu {
-                            Button("保存先を選択…") { requestSelectSaveLocation() }
-                            Button("ファイルから再読み込み") { requestReload() }
-                            if mdStore.isSaving { Text("保存中…") }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .font(.system(size: 12))
-                                .frame(width: 18, height: 18)
-                                .contentShape(Circle())
-                        }
-                        .menuStyle(.borderlessButton)
-                        Button(action: { closePopover() }) { Image(systemName: "xmark") }
-                            .buttonStyle(.borderless)
-                    }
-                }
-            }
+            OverlayHeaderView(
+                overlayOpacity: $overlayOpacity,
+                overlayFontSize: $overlayFontSize,
+                saveLocation: { requestSelectSaveLocation() },
+                reloadFromDisk: { requestReload() },
+                close: { closePopover() }
+            )
             .padding(.horizontal, 8)
             .padding(.top, 8)
 
@@ -257,44 +178,7 @@ struct ContentView: View {
     }
 }
 
-// MARK: - NativeSlider (NSSlider wrapper) to ensure no tick marks
-private struct NativeSlider: NSViewRepresentable {
-    @Binding var value: Double
-    var range: ClosedRange<Double>
-    var isContinuous: Bool = true
 
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    func makeNSView(context: Context) -> NSSlider {
-        let slider = NSSlider()
-        slider.minValue = range.lowerBound
-        slider.maxValue = range.upperBound
-        slider.numberOfTickMarks = 0
-        slider.allowsTickMarkValuesOnly = false
-        slider.isContinuous = isContinuous
-        slider.target = context.coordinator
-        slider.action = #selector(Coordinator.valueChanged(_:))
-        slider.doubleValue = value
-        return slider
-    }
-
-    func updateNSView(_ nsView: NSSlider, context: Context) {
-        nsView.minValue = range.lowerBound
-        nsView.maxValue = range.upperBound
-        nsView.isContinuous = isContinuous
-        if abs(nsView.doubleValue - value) > 0.000_001 {
-            nsView.doubleValue = value
-        }
-    }
-
-    final class Coordinator: NSObject {
-        var parent: NativeSlider
-        init(_ parent: NativeSlider) { self.parent = parent }
-        @objc func valueChanged(_ sender: NSSlider) {
-            parent.value = sender.doubleValue
-        }
-    }
-}
 
 #Preview {
     ContentView()
