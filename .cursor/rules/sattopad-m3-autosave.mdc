@@ -113,3 +113,45 @@ func saveNow() async throws {
 ## 完了の定義
 - 受け入れ基準を満たすこと。
 - 上記の手動テストが通ること。
+
+---
+
+## 現在の実装状況（実コード準拠）
+
+- 主要コンポーネント
+  - `SattoPad/MarkdownStore.swift`: 自動保存・読み込み・保存先選択・ブックマーク・外部変更監視・状態管理（`text/isSaving/lastSavedText`）
+  - `SattoPad/ContentView.swift`: `TextEditor` と `MarkdownStore` の橋渡し、3 点メニュー、未保存確認、エラー/警告アラート
+
+- 既定/保存先
+  - 既定: `~/Documents/SattoPad.md`
+  - 変更: `NSOpenPanel`（ファイル/フォルダ選択可、フォルダは `SattoPad.md` を付与）
+  - 永続化: `UserDefaults`（`sattoPad.markdownPath`, `sattoPad.markdownBookmark`）
+  - サンドボックス想定: セキュリティスコープ付きブックマークを作成/解決（必要時に `startAccessing...`）
+
+- 読み込み
+  - 起動時に URL 解決 → バックグラウンドで読み込み → 改行正規化（`\n`）→ `mdStore.text` 更新
+  - `ContentView` が `mdStore.text` を監視しエディタ/オーバーレイへ反映
+
+- 自動保存
+  - 入力変更で 1 秒デバウンス後に UTF-8/アトミック書き込み
+  - 差分なし（`text == lastSavedText`）はスキップ
+  - 失敗時はリトライ（最大 2 回、指数的バックオフ）
+  - ビュー終了時に `saveNow()` で未保存分をフラッシュ
+
+- 外部変更検知
+  - `DispatchSourceFileSystemObject` で監視。自身の直近書き込みは 1 秒無視（`lastWriteAt`）
+  - 未保存なし: 自動リロード。未保存あり: 警告を提示（アラート）
+  - 削除/リネーム検出時は監視を停止し、URL 再解決後に監視再開を試行
+
+- 明示操作（3 点メニュー）
+  - 「保存先を選択…」: 未保存があれば破棄の確認 → 保存先更新
+  - 「ファイルから再読み込み」: 未保存があれば破棄の確認 → リロード
+
+- エラー/警告
+  - 読み/書き失敗は `lastErrorMessage` を通じてアラート表示
+  - 5MB 超などは `lastWarningMessage` で警告表示
+
+- 非対応/注意
+  - 自動マージなし（外部編集と同時編集時はユーザー判断でリロード）
+  - 常時スピナー等の非モーダル通知は未実装（必要に応じて導入）
+  - 監視の完全復旧（複雑な移動/権限変化）は将来強化余地あり
