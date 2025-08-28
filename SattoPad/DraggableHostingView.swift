@@ -34,11 +34,8 @@ final class DraggableHostingView<Content: View>: NSHostingView<Content> {
             return false
         }
         
-        // ヘッダー部分（上部）のみドラッグ可能
-        let headerHeight: CGFloat = 40
-        let headerRect = NSRect(x: 0, y: bounds.maxY - headerHeight, width: bounds.width, height: headerHeight)
-        
-        return headerRect.contains(mouseLocation)
+        // スクロールバー領域以外は全てドラッグ可能
+        return true
     }
 
     // Allow window edge resizing by not intercepting events near the borders
@@ -61,15 +58,8 @@ final class DraggableHostingView<Content: View>: NSHostingView<Content> {
             return super.hitTest(point)
         }
         
-        // ヘッダー部分（上部）のみドラッグ可能
-        let headerHeight: CGFloat = 40
-        let headerRect = NSRect(x: 0, y: bounds.maxY - headerHeight, width: bounds.width, height: headerHeight)
-        
-        if headerRect.contains(point) {
-            return self
-        } else {
-            return super.hitTest(point)
-        }
+        // スクロールバー領域以外は全てドラッグ可能
+        return self
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -92,17 +82,10 @@ final class DraggableHostingView<Content: View>: NSHostingView<Content> {
             return super.mouseDown(with: event)
         }
         
-        // ヘッダー部分（上部）のみドラッグ可能
-        let headerHeight: CGFloat = 40
-        let headerRect = NSRect(x: 0, y: bounds.maxY - headerHeight, width: bounds.width, height: headerHeight)
-        
-        if headerRect.contains(point) {
-            window?.performDrag(with: event)
-            if let panel = window as? NSPanel {
-                OverlayManager.shared.savePosition(for: panel)
-            }
-        } else {
-            super.mouseDown(with: event)
+        // スクロールバー領域以外は全てドラッグ可能
+        window?.performDrag(with: event)
+        if let panel = window as? NSPanel {
+            OverlayManager.shared.savePosition(for: panel)
         }
     }
 }
