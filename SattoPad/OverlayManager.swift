@@ -162,7 +162,8 @@ final class OverlayManager: NSObject, ObservableObject {
     }
     
     private func configureAdjustableBehavior(_ panel: NSPanel, hosting: DraggableHostingView<OverlayPreviewView>) {
-        panel.isMovableByWindowBackground = isAdjustable
+        // 調整モード時でもウィンドウ背景での移動は無効化（スクロールバー操作を優先）
+        panel.isMovableByWindowBackground = false
         panel.ignoresMouseEvents = !isAdjustable
         hosting.isDraggable = isAdjustable
         

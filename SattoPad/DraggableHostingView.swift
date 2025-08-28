@@ -12,14 +12,60 @@ import SwiftUI
 final class DraggableHostingView<Content: View>: NSHostingView<Content> {
     var isDraggable: Bool = false
 
-    override var mouseDownCanMoveWindow: Bool { isDraggable }
+    override var mouseDownCanMoveWindow: Bool { 
+        guard isDraggable else { return false }
+        
+        // 現在のマウス位置を取得
+        guard let window = window else { return false }
+        let mouseLocation = window.mouseLocationOutsideOfEventStream
+        
+        // スクロールバー領域ではウィンドウ移動を無効化
+        let scrollbarWidth: CGFloat = 15
+        let rightEdge = bounds.maxX - scrollbarWidth
+        let bottomEdge = bounds.minY + scrollbarWidth
+        
+        // 右端のスクロールバー領域
+        if mouseLocation.x > rightEdge {
+            return false
+        }
+        
+        // 下端のスクロールバー領域
+        if mouseLocation.y < bottomEdge {
+            return false
+        }
+        
+        // ヘッダー部分（上部）のみドラッグ可能
+        let headerHeight: CGFloat = 40
+        let headerRect = NSRect(x: 0, y: bounds.maxY - headerHeight, width: bounds.width, height: headerHeight)
+        
+        return headerRect.contains(mouseLocation)
+    }
 
     // Allow window edge resizing by not intercepting events near the borders
+    // Also prevent dragging in scrollbar areas
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard isDraggable else { return super.hitTest(point) }
-        let edgeMargin: CGFloat = 8
-        let innerRect = bounds.insetBy(dx: edgeMargin, dy: edgeMargin)
-        if innerRect.contains(point) {
+        
+        // スクロールバー領域（右端と下端）ではドラッグを無効化
+        let scrollbarWidth: CGFloat = 15
+        let rightEdge = bounds.maxX - scrollbarWidth
+        let bottomEdge = bounds.minY + scrollbarWidth
+        
+        // 右端のスクロールバー領域
+        if point.x > rightEdge {
+            return super.hitTest(point)
+        }
+        
+        // 下端のスクロールバー領域
+        if point.y < bottomEdge {
+            return super.hitTest(point)
+        }
+        
+        // ヘッダー部分（上部）のみドラッグ可能
+        let headerHeight: CGFloat = 40
+        let headerRect = NSRect(x: 0, y: bounds.maxY - headerHeight, width: bounds.width, height: headerHeight)
+        
+        if headerRect.contains(point) {
             return self
         } else {
             return super.hitTest(point)
@@ -28,9 +74,35 @@ final class DraggableHostingView<Content: View>: NSHostingView<Content> {
 
     override func mouseDown(with event: NSEvent) {
         guard isDraggable else { return super.mouseDown(with: event) }
-        window?.performDrag(with: event)
-        if let panel = window as? NSPanel {
-            OverlayManager.shared.savePosition(for: panel)
+        
+        let point = convert(event.locationInWindow, from: nil)
+        
+        // スクロールバー領域ではドラッグを無効化
+        let scrollbarWidth: CGFloat = 15
+        let rightEdge = bounds.maxX - scrollbarWidth
+        let bottomEdge = bounds.minY + scrollbarWidth
+        
+        // 右端のスクロールバー領域
+        if point.x > rightEdge {
+            return super.mouseDown(with: event)
+        }
+        
+        // 下端のスクロールバー領域
+        if point.y < bottomEdge {
+            return super.mouseDown(with: event)
+        }
+        
+        // ヘッダー部分（上部）のみドラッグ可能
+        let headerHeight: CGFloat = 40
+        let headerRect = NSRect(x: 0, y: bounds.maxY - headerHeight, width: bounds.width, height: headerHeight)
+        
+        if headerRect.contains(point) {
+            window?.performDrag(with: event)
+            if let panel = window as? NSPanel {
+                OverlayManager.shared.savePosition(for: panel)
+            }
+        } else {
+            super.mouseDown(with: event)
         }
     }
 }

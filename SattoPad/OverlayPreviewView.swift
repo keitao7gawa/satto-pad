@@ -70,14 +70,17 @@ struct OverlayPreviewView: View {
             }
 
             if adjustable {
-                HStack(spacing: 6) {
-                    Image(systemName: "move.3d")
-                    Text("Drag to move")
-                        .font(.caption2)
+                VStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "move.3d")
+                        Text("Drag to move")
+                            .font(.caption2)
+                    }
+                    .padding(6)
+                    .background(.thinMaterial, in: Capsule())
+                    .padding(8)
+                    Spacer()
                 }
-                .padding(6)
-                .background(.thinMaterial, in: Capsule())
-                .padding(8)
             }
         }
         .contentShape(Rectangle())
