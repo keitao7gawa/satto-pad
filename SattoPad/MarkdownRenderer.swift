@@ -17,6 +17,7 @@ struct MarkdownRenderer {
         enum Kind {
             case heading(Int, [InlineElement])
             case bullet(Int, [InlineElement]) // level, text elements
+            case numbered(Int, Int, [InlineElement]) // level, number, text elements
             case code(String)
             case paragraph([InlineElement])
         }
@@ -66,6 +67,8 @@ struct MarkdownRenderer {
             
             if let heading = parseHeading(line) {
                 lines.append(heading)
+            } else if let numberedList = parseNumberedList(line, rawLine: rawLine) {
+                lines.append(numberedList)
             } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
                 let level = leadingIndentLevel(for: rawLine)
                 let content = String(line.dropFirst(2)).trimmingCharacters(in: .whitespaces)
@@ -109,6 +112,29 @@ struct MarkdownRenderer {
             let content = line[idx...].trimmingCharacters(in: .whitespaces)
             let elements = parseInlineElements(String(content))
             return MDLine(kind: .heading(level, elements))
+        }
+        
+        return nil
+    }
+    
+    private static func parseNumberedList(_ line: String, rawLine: String) -> MDLine? {
+        // Match patterns like "1. ", "2. ", "10. ", etc.
+        let pattern = "^\\s*(\\d+)\\.\\s+(.+)$"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        let range = NSRange(location: 0, length: line.utf16.count)
+        
+        if let match = regex?.firstMatch(in: line, options: [], range: range) {
+            let numberRange = match.range(at: 1)
+            let contentRange = match.range(at: 2)
+            
+            let numberString = (line as NSString).substring(with: numberRange)
+            let content = (line as NSString).substring(with: contentRange)
+            
+            if let number = Int(numberString) {
+                let level = leadingIndentLevel(for: rawLine)
+                let elements = parseInlineElements(content)
+                return MDLine(kind: .numbered(level, number, elements))
+            }
         }
         
         return nil

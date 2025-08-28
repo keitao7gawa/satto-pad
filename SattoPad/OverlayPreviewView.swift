@@ -100,6 +100,14 @@ struct OverlayPreviewView: View {
                 .font(OverlayTypography.fontForBody(baseSize: baseFontSize))
                 .padding(.leading, CGFloat(level) * OverlayTypography.bulletIndent)
             }
+        case let .numbered(level, number, elements):
+            HStack(alignment: .firstTextBaseline, spacing: OverlayTypography.bulletSpacing) {
+                Text("\(number).")
+                    .foregroundStyle(.secondary)
+                renderInlineElements(elements)
+            }
+            .font(OverlayTypography.fontForBody(baseSize: baseFontSize))
+            .padding(.leading, CGFloat(level) * OverlayTypography.bulletIndent)
         case let .code(code):
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(code.isEmpty ? "\u{00A0}" : code)
