@@ -32,6 +32,7 @@ struct OverlayPreviewView: View {
                         Text("No content")
                             .foregroundStyle(.secondary)
                             .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .id("empty-content")
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
@@ -41,11 +42,13 @@ struct OverlayPreviewView: View {
                             }
                         }
                         .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .scrollIndicators(adjustable ? .visible : .hidden)
                 .scrollDisabled(!adjustable)
                 .padding(.top, 0)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .onAppear {
                     // Restore saved scroll position when view appears
                     if adjustable && !text.isEmpty {
