@@ -15,6 +15,9 @@ struct OverlayPreviewView: View {
     @AppStorage("sattoPad.overlay.opacity") private var overlayOpacity: Double = 0.95
     @State private var dragOffset: CGSize = .zero
     @AppStorage("sattoPad.overlay.fontSize") private var baseFontSize: Double = OverlaySettingsStore.fontSize
+    @State private var scrollPosition: CGPoint = .zero
+    @AppStorage("sattoPad.overlay.scrollX") private var savedScrollX: Double = 0
+    @AppStorage("sattoPad.overlay.scrollY") private var savedScrollY: Double = 0
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -23,21 +26,48 @@ struct OverlayPreviewView: View {
                 .fill(.ultraThinMaterial)
                 .opacity(overlayOpacity)
                 .shadow(radius: 8)
-            ScrollView {
-                if text.isEmpty {
-                    Text("No content")
-                        .foregroundStyle(.secondary)
-                        .padding(12)
-                } else {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(MarkdownRenderer.parseMarkdownBlocks(text: text)) { block in
-                            blockView(block)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    if text.isEmpty {
+                        Text("No content")
+                            .foregroundStyle(.secondary)
+                            .padding(12)
+                            .id("empty-content")
+                    } else {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(MarkdownRenderer.parseMarkdownBlocks(text: text)) { block in
+                                blockView(block)
+                                    .id("block-\(block.id)")
+                            }
                         }
+                        .padding(12)
                     }
-                    .padding(12)
+                }
+                .scrollIndicators(adjustable ? .visible : .hidden)
+                .scrollDisabled(!adjustable)
+                .padding(.top, 0)
+                .onAppear {
+                    // Restore saved scroll position when view appears
+                    if adjustable && !text.isEmpty {
+                        restoreScrollPosition(proxy: proxy)
+                    }
+                }
+                .onChange(of: adjustable) { _, newAdjustable in
+                    if newAdjustable {
+                        // When entering adjustment mode, restore saved scroll position
+                        restoreScrollPosition(proxy: proxy)
+                    } else {
+                        // When exiting adjustment mode, save current scroll position
+                        saveScrollPosition()
+                    }
+                }
+                .onChange(of: text) { _, _ in
+                    // When text changes, try to maintain scroll position if in adjustment mode
+                    if adjustable {
+                        restoreScrollPosition(proxy: proxy)
+                    }
                 }
             }
-            .padding(.top, 0)
 
             if adjustable {
                 HStack(spacing: 6) {
@@ -149,6 +179,30 @@ struct OverlayPreviewView: View {
                 .padding(.horizontal, 2)
                 .background(Color.secondary.opacity(0.1))
                 .cornerRadius(3)
+        }
+    }
+    
+    // MARK: - Scroll Position Management
+    
+    private func saveScrollPosition() {
+        // Save current scroll position to UserDefaults
+        savedScrollX = scrollPosition.x
+        savedScrollY = scrollPosition.y
+    }
+    
+    private func restoreScrollPosition(proxy: ScrollViewProxy) {
+        // Restore scroll position based on saved values
+        // For simplicity, we'll scroll to a specific block if we have a saved position
+        if savedScrollY > 0 && !text.isEmpty {
+            let blocks = MarkdownRenderer.parseMarkdownBlocks(text: text)
+            if !blocks.isEmpty {
+                // Calculate which block to scroll to based on saved Y position
+                let targetBlockIndex = min(Int(savedScrollY / 20), blocks.count - 1)
+                let targetBlock = blocks[targetBlockIndex]
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    proxy.scrollTo("block-\(targetBlock.id)", anchor: .top)
+                }
+            }
         }
     }
 

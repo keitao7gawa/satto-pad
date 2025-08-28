@@ -25,6 +25,10 @@ final class OverlayManager: NSObject, ObservableObject {
     @Published var isAdjustable: Bool = false
     @Published var memoText: String = ""
     private var dragStartOrigin: CGPoint?
+    
+    // Scroll position management
+    private let scrollXKey = "sattoPad.overlay.scrollX"
+    private let scrollYKey = "sattoPad.overlay.scrollY"
 
     private override init() {}
 
@@ -58,6 +62,11 @@ final class OverlayManager: NSObject, ObservableObject {
     func setAdjustable(_ adjustable: Bool) {
         isAdjustable = adjustable
         updateAdjustmentMode()
+        
+        // Save scroll position when exiting adjustment mode
+        if !adjustable {
+            saveScrollPosition()
+        }
     }
     
     private func updateAdjustmentMode() {
@@ -211,6 +220,19 @@ final class OverlayManager: NSObject, ObservableObject {
         let yFromTop = frame.maxY - origin.y - size.height
         let normY = yFromTop / frame.height
         return CGPoint(x: max(0, min(1, normX)), y: max(0, min(1, normY)))
+    }
+    
+    // MARK: - Scroll Position Management
+    
+    func saveScrollPosition() {
+        // This will be called by the OverlayPreviewView when scroll position changes
+        // The actual scroll position is managed by the view itself via @AppStorage
+    }
+    
+    func getScrollPosition() -> CGPoint {
+        let x = defaults.object(forKey: scrollXKey) as? Double ?? 0
+        let y = defaults.object(forKey: scrollYKey) as? Double ?? 0
+        return CGPoint(x: x, y: y)
     }
 }
 
