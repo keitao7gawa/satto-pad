@@ -88,8 +88,10 @@ struct ContentView: View {
         }
         .onChange(of: mdStore.text) { _, newValue in
             // Update editor with disk content when store loads
-            memoText = newValue
-            OverlayManager.shared.update(text: newValue)
+            if memoText != newValue {
+                memoText = newValue
+                OverlayManager.shared.update(text: newValue)
+            }
         }
         .onChange(of: mdStore.lastErrorMessage) { _, newValue in
             guard let msg = newValue, !msg.isEmpty else { return }
