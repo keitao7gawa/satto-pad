@@ -103,7 +103,7 @@ struct OverlayPreviewView: View {
         case let .code(code):
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(code.isEmpty ? "\u{00A0}" : code)
-                    .font(OverlayTypography.fontForCode())
+                    .font(OverlayTypography.fontForCode(baseSize: baseFontSize))
                     .padding(OverlayTypography.codeBlockPadding)
                     .background(RoundedRectangle(cornerRadius: OverlayTypography.codeBlockCornerRadius).fill(Color(nsColor: .windowBackgroundColor)))
                     .overlay(RoundedRectangle(cornerRadius: OverlayTypography.codeBlockCornerRadius).stroke(Color.secondary.opacity(0.2)))
@@ -137,7 +137,7 @@ struct OverlayPreviewView: View {
                 .italic()
         case .code(let text):
             Text(text)
-                .font(.system(.body, design: .monospaced))
+                .font(OverlayTypography.fontForCode(baseSize: baseFontSize))
                 .padding(.horizontal, 2)
                 .background(Color.secondary.opacity(0.1))
                 .cornerRadius(3)

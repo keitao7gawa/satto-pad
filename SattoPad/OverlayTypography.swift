@@ -52,7 +52,7 @@ struct OverlayTypography {
         return .system(size: CGFloat(baseSize))
     }
     
-    static func fontForCode() -> Font {
-        return .system(size: CGFloat(codeFontSize), design: .monospaced)
+    static func fontForCode(baseSize: Double) -> Font {
+        return .system(size: CGFloat(baseSize), design: .monospaced)
     }
 }
