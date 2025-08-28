@@ -15,10 +15,23 @@ struct MarkdownRenderer {
         let kind: Kind
         
         enum Kind {
-            case heading(Int, String)
-            case bullet(Int, String) // level, text
+            case heading(Int, [InlineElement])
+            case bullet(Int, [InlineElement]) // level, text elements
             case code(String)
-            case paragraph(String)
+            case paragraph([InlineElement])
+        }
+    }
+    
+    // MARK: - Inline Elements
+    struct InlineElement: Identifiable {
+        let id = UUID()
+        let kind: InlineKind
+        
+        enum InlineKind {
+            case text(String)
+            case bold(String)
+            case italic(String)
+            case code(String)
         }
     }
     
@@ -56,9 +69,11 @@ struct MarkdownRenderer {
             } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
                 let level = leadingIndentLevel(for: rawLine)
                 let content = String(line.dropFirst(2)).trimmingCharacters(in: .whitespaces)
-                lines.append(MDLine(kind: .bullet(level, content)))
+                let elements = parseInlineElements(content)
+                lines.append(MDLine(kind: .bullet(level, elements)))
             } else {
-                lines.append(MDLine(kind: .paragraph(rawLine)))
+                let elements = parseInlineElements(rawLine)
+                lines.append(MDLine(kind: .paragraph(elements)))
             }
         }
         
@@ -92,9 +107,126 @@ struct MarkdownRenderer {
         
         if level > 0 {
             let content = line[idx...].trimmingCharacters(in: .whitespaces)
-            return MDLine(kind: .heading(level, String(content)))
+            let elements = parseInlineElements(String(content))
+            return MDLine(kind: .heading(level, elements))
         }
         
+        return nil
+    }
+    
+    // MARK: - Inline Parsing
+    static func parseInlineElements(_ text: String) -> [InlineElement] {
+        var elements: [InlineElement] = []
+        var remainingText = text
+        
+        // Process in order: bold, italic, code
+        while !remainingText.isEmpty {
+            var found = false
+            
+            // Check for bold (**text**)
+            if let (content, startIndex, endIndex) = findBold(remainingText) {
+                // Add text before bold
+                if startIndex > remainingText.startIndex {
+                    let beforeText = String(remainingText[remainingText.startIndex..<startIndex])
+                    if !beforeText.isEmpty {
+                        elements.append(InlineElement(kind: .text(beforeText)))
+                    }
+                }
+                
+                // Add bold content
+                elements.append(InlineElement(kind: .bold(content)))
+                
+                // Update remaining text
+                remainingText = String(remainingText[endIndex...])
+                found = true
+            }
+            // Check for italic (*text*)
+            else if let (content, startIndex, endIndex) = findItalic(remainingText) {
+                // Add text before italic
+                if startIndex > remainingText.startIndex {
+                    let beforeText = String(remainingText[remainingText.startIndex..<startIndex])
+                    if !beforeText.isEmpty {
+                        elements.append(InlineElement(kind: .text(beforeText)))
+                    }
+                }
+                
+                // Add italic content
+                elements.append(InlineElement(kind: .italic(content)))
+                
+                // Update remaining text
+                remainingText = String(remainingText[endIndex...])
+                found = true
+            }
+            // Check for inline code (`text`)
+            else if let (content, startIndex, endIndex) = findInlineCode(remainingText) {
+                // Add text before code
+                if startIndex > remainingText.startIndex {
+                    let beforeText = String(remainingText[remainingText.startIndex..<startIndex])
+                    if !beforeText.isEmpty {
+                        elements.append(InlineElement(kind: .text(beforeText)))
+                    }
+                }
+                
+                // Add code content
+                elements.append(InlineElement(kind: .code(content)))
+                
+                // Update remaining text
+                remainingText = String(remainingText[endIndex...])
+                found = true
+            }
+            
+            if !found {
+                // No special formatting found, add remaining text
+                elements.append(InlineElement(kind: .text(remainingText)))
+                break
+            }
+        }
+        
+        return elements.isEmpty ? [InlineElement(kind: .text(text))] : elements
+    }
+    
+    private static func findBold(_ text: String) -> (content: String, startIndex: String.Index, endIndex: String.Index)? {
+        if let start = text.range(of: "**") {
+            let contentStart = start.upperBound
+            if let end = text.range(of: "**", range: contentStart..<text.endIndex) {
+                let content = String(text[contentStart..<end.lowerBound])
+                if !content.isEmpty {
+                    return (content, start.lowerBound, end.upperBound)
+                }
+            }
+        }
+        return nil
+    }
+    
+    private static func findItalic(_ text: String) -> (content: String, startIndex: String.Index, endIndex: String.Index)? {
+        if let start = text.range(of: "*") {
+            let contentStart = start.upperBound
+            
+            // Skip if this is part of bold (**)
+            if contentStart < text.endIndex && text[contentStart] == "*" {
+                return nil
+            }
+            
+            if let end = text.range(of: "*", range: contentStart..<text.endIndex) {
+                let content = String(text[contentStart..<end.lowerBound])
+                if !content.isEmpty {
+                    return (content, start.lowerBound, end.upperBound)
+                }
+            }
+        }
+        return nil
+    }
+    
+    private static func findInlineCode(_ text: String) -> (content: String, startIndex: String.Index, endIndex: String.Index)? {
+        if let start = text.range(of: "`") {
+            let contentStart = start.upperBound
+            if let end = text.range(of: "`", range: contentStart..<text.endIndex) {
+                let content = String(text[contentStart..<end.lowerBound])
+                if !content.isEmpty {
+                    return (content, start.lowerBound, end.upperBound)
+                }
+            }
+        }
         return nil
     }
 }
