@@ -15,6 +15,7 @@ import KeyboardShortcuts
 struct OverlayHeaderView: View {
     @Binding var overlayOpacity: Double
     @Binding var overlayFontSize: Double
+    @State private var showAboutSheet: Bool = false
 
     var saveLocation: () -> Void
     var reloadFromDisk: () -> Void
@@ -60,6 +61,8 @@ struct OverlayHeaderView: View {
                 Menu {
                     Button("保存先を選択…", action: saveLocation)
                     Button("ファイルから再読み込み", action: reloadFromDisk)
+                    Divider()
+                    Button("About SattoPad", action: { showAboutSheet = true })
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .font(.system(size: 12))
@@ -71,6 +74,9 @@ struct OverlayHeaderView: View {
                 Button(action: close) { Image(systemName: "xmark") }
                     .buttonStyle(.borderless)
             }
+        }
+        .sheet(isPresented: $showAboutSheet) {
+            AboutView()
         }
     }
 
