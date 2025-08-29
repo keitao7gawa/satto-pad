@@ -19,25 +19,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var hotKeyRef: EventHotKeyRef?
     private var hotKeyEventHandlerRef: EventHandlerRef?
 
-    // MARK: - Menu bar icon state
-    private enum StatusIconState {
-        case idle      // 未使用
-        case active    // 使用中（プレビュー表示）
-        case adjusting // 調整中（ポップオーバー表示）
-    }
     private var statusButton: NSStatusBarButton? { statusItem?.button }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Status item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "note.text", accessibilityDescription: "SattoPad")
+            button.image = NSImage(named: "MenubarIcon")
             button.image?.isTemplate = true
             button.action = #selector(togglePopover(_:))
             button.target = self
         }
-        // 初期状態は未使用
-        updateStatusIcon(.idle)
 
         // Popover content
         popover.behavior = .transient
@@ -50,13 +42,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         KeyboardShortcutsDefaults.ensureDefaultIfNeeded()
         KeyboardShortcuts.onKeyDown(for: .toggleSattoPad) {
             OverlayManager.shared.show()
-            if !(self.popover.isShown) {
-                self.updateStatusIcon(.active)
-            }
         }
         KeyboardShortcuts.onKeyUp(for: .toggleSattoPad) {
             OverlayManager.shared.hide()
-            self.updateStatusIcon(self.popover.isShown ? .adjusting : .idle)
         }
         #else
         registerDefaultHotKey()
@@ -85,8 +73,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Enable overlay adjustment while popover is visible
         OverlayManager.shared.setAdjustable(true)
         OverlayManager.shared.show()
-        // ポップオーバー表示中は調整中
-        updateStatusIcon(.adjusting)
     }
 
     private func closePopover(_ sender: Any?) {
@@ -94,70 +80,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Ensure overlay is hidden when popover closes
         OverlayManager.shared.hide()
         OverlayManager.shared.setAdjustable(false)
-        // ポップオーバー終了 → 未使用へ
-        updateStatusIcon(.idle)
     }
 
     // MARK: - NSPopoverDelegate
     func popoverWillShow(_ notification: Notification) {
         OverlayManager.shared.setAdjustable(true)
         OverlayManager.shared.show()
-        updateStatusIcon(.adjusting)
     }
 
     func popoverWillClose(_ notification: Notification) {
         OverlayManager.shared.hide()
         OverlayManager.shared.setAdjustable(false)
-        updateStatusIcon(.idle)
     }
 }
 
-private extension AppDelegate {
-    private func updateStatusIcon(_ state: StatusIconState) {
-        guard let button = statusButton else { return }
-        switch state {
-        case .idle:
-            let img = NSImage(systemSymbolName: "note.text", accessibilityDescription: "SattoPad")
-            img?.isTemplate = true // メニューバー色に追従（グレースケール）
-            button.image = img
-        case .active:
-            button.title = ""
-            button.image = makeEmojiStatusImage("👀")
-        case .adjusting:
-            button.title = ""
-            button.image = makeEmojiStatusImage("✏️")
-        }
-        button.imagePosition = .imageOnly
-    }
 
-    // 絵文字をカラーのままNSImageとして描画（メニューバーの推奨サイズに合わせる）
-    private func makeEmojiStatusImage(_ emoji: String) -> NSImage? {
-        // 18〜20pt 程度が一般的。Retina を考慮してスケール2xで描画
-        let pointSize: CGFloat = 18
-        let _: CGFloat = NSScreen.main?.backingScaleFactor ?? 2.0
-        let image = NSImage(size: CGSize(width: pointSize, height: pointSize))
-        image.lockFocusFlipped(false)
-        defer { image.unlockFocus() }
-
-        // センターに描画されるように計測
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: pointSize)
-        ]
-        let attributed = NSAttributedString(string: emoji, attributes: attributes)
-        let textSize = attributed.size()
-        let drawRect = CGRect(
-            x: (pointSize - textSize.width) / 2.0,
-            y: (pointSize - textSize.height) / 2.0,
-            width: textSize.width,
-            height: textSize.height
-        )
-        attributed.draw(in: drawRect)
-
-        // 色付きで表示したいのでテンプレートにはしない
-        image.isTemplate = false
-        return image
-    }
-}
 
 #if !canImport(KeyboardShortcuts)
 // MARK: - Global Hot Key (Carbon fallback)
