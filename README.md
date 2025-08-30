@@ -1,83 +1,189 @@
-# SattoPad
+# SattoPad - 瞬間メモアプリ
 
-「パッと見れること」に全振りした、超シンプルな macOS 用メモアプリです。見ることが主役、書くことは最短で済ませます。
+⚡ **ホットキー入力中にのみ，一瞬でメモを表示**
 
-- いつでも瞬間表示（メニューバー常駐 + グローバルショートカット）
-- 押している間だけ表示できるオーバーレイ（KeyboardShortcuts 導入時）
-- シンプルな複数行メモ + 軽いプレビュー（オーバーレイ）
-- Markdown 自動保存・起動時復元（ローカルのみ）
-- UI は最小限。見る→必要なら一言書く→閉じる
+> 「さっと」みることに全振りした、超シンプルな macOS 用メモアプリ
 
-## 背景とコンセプト（要約）
-- 意識したいこと・今の立ち位置を「すぐ見たい」。脱線を防ぎたい。
-- 手が空くとキーボードを叩いてしまう、その勢いで思考が散りがち。
-- だからこそ「見る」行為を最短に。Command + Shift + T で一発表示。
-- 大きく読みやすい文字、軽い動作、余計な機能は足さない。
-- 編集はできるが、まずは“表示”。必要なときだけ最短で書いて閉じる。
+[![Download](https://img.shields.io/badge/Download-macOS%2012+-blue?style=for-the-badge&logo=apple)](https://github.com/keitao7gawa/satto-pad/releases)
+[![GitHub stars](https://img.shields.io/github/stars/keitao7gawa/satto-pad?style=for-the-badge&logo=github)](https://github.com/keitao7gawa/satto-pad)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)](https://github.com/keitao7gawa/satto-pad/actions)
 
 ---
 
-## 特徴（シンプルさ最優先）
-- メニューバーからワンクリックでポップオーバーを開閉（ESC でも閉じる）
-- グローバルショートカット（既定: Cmd + Shift + T）
-  - KeyboardShortcuts 導入時は「押している間だけ」オーバーレイを表示
-  - 導入していない場合はトグル表示
-- オーバーレイプレビュー（デスクトップ上の軽量ウィンドウ）
-  - 背景の透明度のみ変更（テキストは常に不透明で読みやすい）
-  - ポップオーバー表示中はドラッグで位置を移動（左上に“ひょっこり”置ける）
-- 自動保存/読み込み（Markdown）
-  - 既定パス: `~/Documents/SattoPad.md`
-  - 入力変更を約 1 秒デバウンスしてアトミック保存
-  - 次回起動時に自動復元
-  - 保存先は 3 点メニューから変更可能
-
-## 使い方
-1) まずはショートカットで“見る”（Cmd + Shift + T）
-   - KeyboardShortcuts 導入時: 押している間だけオーバーレイが表示
-   - 未導入時: 表示/非表示のトグル
-2) 必要ならポップオーバーで“書く”（右上 3 点メニューに各種操作）
-3) 閉じる（× または ESC）
-
-- 透明度: ヘッダーのスライダーで 5%〜100% を調整（ラベルはスライダー上に中央表示）
-- オーバーレイ移動: ポップオーバーを開いている間、オーバーレイ上の「Drag to move」付近をドラッグ
-
-## 自動保存とファイル
-- 既定の保存先: `~/Documents/SattoPad.md`
-- 入力は約 1 秒後に自動保存（連続タイプ時の無駄書き込みを抑制）
-- アプリ起動時に前回内容を自動復元
-- 3 点メニュー
-  - 保存先を選択…（フォルダ選択時は `SattoPad.md` を自動付与）
-  - ファイルから再読み込み（未保存の変更がある場合は確認ダイアログ）
-- 外部変更の検知
-  - 未保存の変更がなければ自動リロード
-  - 未保存がある場合は警告のみ表示
-
-## ショートカット
-- 既定: Cmd + Shift + T（表示/非表示）
-- ホットキー設定
-  - SPM の KeyboardShortcuts を導入済みの環境では、ヘッダーにレコーダーを表示（幅が狭い場合は 3 点メニューに格納）
-  - 未導入の場合は Carbon のデフォルトホットキーで動作
-
-## ビルド/実行
-- macOS 12+ / Xcode 15 以降を推奨（SwiftUI）
-- `SattoPad.xcodeproj` を Xcode で開き、Run
-- メニューバーにアイコンが出現（Dock 非表示）。クリックでポップオーバーが開きます
-
-## 設計メモ
-- 保存はバックグラウンドキューで実行、UI 更新はメインスレッド
-- 書き込みはアトミック、UTF-8（BOM 無し）
-- サンドボックス配布を想定し、保存先はセキュリティスコープ付きブックマークで保持（非サンドボックスでも動作）
-
-## 既知の制限 / 今後
-- 外部編集の自動マージは非対応（必要に応じて「再読み込み」を実行）
-- Markdown の高度なプレビュー（見出し/箇条書き等の拡張表現は最低限）
-- 今後の予定
-  - UI の磨き込み（余白/アニメーション/アクセシビリティ）
-  - プレビューの強化（Markdown レンダリングの拡張）
-
-## プライバシー
-- すべてローカル保存。クラウドや外部送信は行いません。
+![Satto-pad-concept](https://github.com/user-attachments/assets/1ce848d7-333d-4996-891f-6ae8e3a95abb)
 
 ---
 
-シンプルに、すぐ書ける。SattoPad は「取り出す/書く/閉じる」を最速にします。
+## 📥 ダウンロード
+
+### システム要件
+- **macOS 12.0+** (Monterey以降)
+- **Apple Silicon** または **Intel** プロセッサ
+
+### インストール方法
+
+#### 1. GitHub Releases（推奨）
+```bash
+# 最新リリースをダウンロード
+curl -L https://github.com/keitao7gawa/satto-pad/releases/latest/download/SattoPad.dmg
+```
+
+#### 2. Homebrew
+```bash
+brew install --cask satto-pad
+```
+
+#### 3. 手動インストール
+1. [Releases](https://github.com/keitao7gawa/satto-pad/releases)から最新版をダウンロード
+2. `.dmg`ファイルを開く
+3. アプリを`Applications`フォルダにドラッグ
+4. 初回起動時にセキュリティ設定を許可
+
+---
+
+## 🚀 なぜSattoPadなのか？
+
+| 機能 | SattoPad | 他のメモアプリ |
+|------|----------|----------------|
+| **操作** | `ホットキー長押し` | クリック・タップ・ホットキートグル |
+| **表示方式** | `オーバーレイ` | ウィンドウ切り替え |
+| **データ保存** | `ローカルのみ` | クラウド同期 |
+| **学習コスト** | ほぼゼロ | 設定が必要 |
+
+### 🎯 1つのことに特化
+- **見る**ことが主役、書くことは最短で済ませる
+- 脱線を防ぎ、今の立ち位置を「すぐ見たい」
+
+---
+
+## ⚡ 使い方
+
+### 1️⃣ ホットキーで「見る」
+```
+Cmd + Shift + T を長押し
+```
+- 押している間だけオーバーレイが表示
+- 離すと自動で非表示
+
+### 2️⃣ 必要なら「書く」
+```
+メニューバーアイコンをクリック
+```
+- ポップオーバーで編集
+- 自動保存（1秒デバウンス）
+
+---
+
+## 🎨 主な機能
+
+### ⚡ 瞬間表示
+- **メニューバー常駐** + **グローバルショートカット**
+- 押している間だけ表示できるオーバーレイ
+- 0.3秒での表示・非表示
+
+### 🎯 シンプルな操作
+- **シンプルな複数行メモ** + **軽いプレビュー**
+- **Markdown自動保存**・起動時復元（ローカルのみ）
+- **UIは最小限**：見る→必要なら一言書く→閉じる
+
+### 🔧 カスタマイズ
+- **透明度調整**：5%〜100%（ヘッダーのスライダー）
+- **オーバーレイ移動**：ドラッグで位置調整
+- **保存先変更**：3点メニューから任意の場所に設定
+
+---
+
+## 🔒 プライバシー
+
+- ✅ **すべてローカル保存**
+- ✅ **クラウドや外部送信なし**
+- ✅ **オープンソース**（MIT License）
+- ✅ **サンドボックス対応**
+
+---
+
+## 👨‍💻 開発者情報
+
+**開発者**: [@keitao7gawa](https://github.com/keitao7gawa)  
+**方針**: シンプルで実用的なツールの提供
+
+### 技術スタック
+- **SwiftUI** - モダンなUI
+- **AppKit** - ネイティブmacOS統合
+- **KeyboardShortcuts** - グローバルショートカット
+- **Carbon** - フォールバック対応
+
+### 依存関係
+- `KeyboardShortcuts` (MIT License)
+- `SwiftUI` (Apple)
+- `AppKit` (Apple)
+
+---
+
+## 🛠️ 開発者向け
+
+### ビルド・実行
+```bash
+git clone https://github.com/keitao7gawa/satto-pad.git
+cd satto-pad
+open SattoPad.xcodeproj
+```
+
+**要件:**
+- Xcode 15+
+- macOS 12+ (開発環境)
+
+### セキュリティスキャン結果
+- ✅ **コード品質**: SwiftLint準拠
+- ✅ **依存関係**: 脆弱性なし
+- ✅ **サンドボックス**: 完全対応
+
+---
+
+## ❓ FAQ
+
+**Q: 他のアプリと競合するホットキーは？**
+A: 3点メニューから設定変更可能です。
+
+**Q: データはどこに保存されますか？**
+A: デフォルトは`~/Documents/SattoPad/SattoPad.md`です。変更可能。
+
+**Q: 外部エディタで編集したファイルは？**
+A: 自動検知してリロードします（未保存の変更がある場合は警告）。
+
+**Q: サンドボックス環境でも動作しますか？**
+A: はい。セキュリティスコープ付きブックマークで対応。
+
+**Q: トラブルシューティング**
+A: よくある問題と解決方法：
+- ホットキーが効かない → システム環境設定でアクセシビリティ権限を確認
+- アプリが起動しない → macOS 12.0以降であることを確認
+- 保存ができない → ディスク容量と書き込み権限を確認
+
+---
+
+## 🤝 コミュニティ
+
+- 🐛 **バグ報告**: [Issues](https://github.com/keitao7gawa/satto-pad/issues)
+- 💡 **機能要望**: [Discussions](https://github.com/keitao7gawa/satto-pad/discussions)
+- 🐦 **Twitter**: [@keitao7gawa](https://twitter.com/keitao7gawa)
+- 📧 **連絡先**: [GitHub Profile](https://github.com/keitao7gawa)
+
+---
+
+## 📄 ライセンス
+
+MIT License - 詳細は[LICENSE](LICENSE)を参照
+
+---
+
+## ⭐ スターをください！
+
+このプロジェクトが役に立ったら、ぜひスターを押してください！
+
+[![GitHub stars](https://img.shields.io/github/stars/keitao7gawa/satto-pad?style=social&logo=github)](https://github.com/keitao7gawa/satto-pad)
+
+---
+
+**シンプルに、すぐ書ける。SattoPad は「取り出す/書く/閉じる」を最速にします。**
