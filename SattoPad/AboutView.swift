@@ -40,7 +40,7 @@ struct AboutView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     // Description
-                    Text("A lightweight memo app that lives in your menu bar")
+                    Text("⚡ memo app specialized for quick viewing (satto)")
                         .font(.body)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
@@ -392,9 +392,9 @@ struct LicenseView: View {
     
     private var sattoPadLicense: String {
         """
-        SattoPad - A lightweight memo app for macOS
+        SattoPad - A memo app specialized for quick viewing on macOS
 
-        Copyright (c) 2024 SattoPad Contributors
+        Copyright (c) 2025 SattoPad Contributors
 
         This software is provided as-is for personal and educational use.
         You may use, modify, and distribute this software for non-commercial purposes.
