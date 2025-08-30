@@ -63,6 +63,8 @@ struct OverlayHeaderView: View {
                     Button("ファイルから再読み込み", action: reloadFromDisk)
                     Divider()
                     Button("About SattoPad", action: { showAboutSheet = true })
+                    Divider()
+                    Button("終了する", action: { NSApplication.shared.terminate(nil) })
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .font(.system(size: 12))
