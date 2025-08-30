@@ -134,7 +134,7 @@ struct AboutView: View {
             VStack {
                 Divider()
                 Button("Close") {
-                    dismiss()
+                    closeAboutOnly()
                 }
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 16)
@@ -224,7 +224,9 @@ struct AboutView: View {
         escapeKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             // keyCode 53 == Escape
             if event.keyCode == 53 {
-                closeAboutAndPopover()
+                DispatchQueue.main.async {
+                    self.closeAboutAndPopover()
+                }
                 return nil // consume the key event
             }
             return event
@@ -238,13 +240,31 @@ struct AboutView: View {
         }
     }
     
+    private func closeAboutOnly() {
+        // Close only the About view (V_about) - Close button behavior
+        dismiss()
+    }
+    
     private func closeAboutAndPopover() {
-        // First dismiss the About view
+        // First, close the About view (V_about)
         dismiss()
         
-        // Then close the entire popover by finding and closing the key window
+        // Then, after a short delay, close the popup overlay and adjustment mode overlay
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            NSApp.keyWindow?.performClose(nil)
+            // Close adjustment mode overlay (O_adjust) if it's active
+            OverlayManager.shared.setAdjustable(false)
+            OverlayManager.shared.hide()
+            
+            // Close the popup overlay (O_popup) - ensure it's closed
+            if let keyWindow = NSApp.keyWindow {
+                keyWindow.performClose(nil)
+            }
+            // Also try to close any popover windows
+            for window in NSApp.windows {
+                if window.isVisible && window != NSApp.keyWindow {
+                    window.performClose(nil)
+                }
+            }
         }
     }
 }
