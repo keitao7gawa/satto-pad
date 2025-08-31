@@ -58,8 +58,8 @@ Dockやウィンドウは表示せず、メニューバーに静かに常駐。�
 
 ## 📥 今すぐ体験する
 
-### 1. Homebrew (対応予定)
-現在Homebrew Caskへの登録を準備中です。登録が完了次第、以下のコマンドでインストールできるようになります。
+### 1. Homebrew
+以下のコマンドでインストールできます
 
 ```bash
 brew tap keitao7gawa/satto-pad
