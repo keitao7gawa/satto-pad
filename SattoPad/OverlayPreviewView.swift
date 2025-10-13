@@ -30,11 +30,14 @@ struct OverlayPreviewView: View {
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    Markdown(text)
-                        .markdownTheme(.sattoPad(baseSize: baseFontSize))
-                        .markdownSoftBreakMode(.lineBreak)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Markdown(processedMarkdown(text))
+                            .markdownTheme(.sattoPad(baseSize: baseFontSize))
+                            .markdownSoftBreakMode(.lineBreak)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: false)
+                    }
                 }
             }
             .scrollIndicators(adjustable ? .visible : .hidden)
@@ -63,4 +66,33 @@ struct OverlayPreviewView: View {
 
 #Preview {
     OverlayPreviewView(text: "# SattoPad\n\n- Item", adjustable: true)
+}
+
+fileprivate func processedMarkdown(_ text: String) -> String {
+    let lines = text.components(separatedBy: "\n")
+    var output = ""
+    var inFence = false
+
+    for index in lines.indices {
+        let line = lines[index]
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        let isFence = trimmed.hasPrefix("```")
+
+        if isFence {
+            inFence.toggle()
+        }
+
+        output.append(line)
+
+        if index < lines.count - 1 {
+            let nextLine = lines[index + 1]
+            if inFence || line.isEmpty || nextLine.isEmpty {
+                output.append("\n")
+            } else {
+                output.append("  \n")
+            }
+        }
+    }
+
+    return output
 }
