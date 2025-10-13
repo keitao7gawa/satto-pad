@@ -32,6 +32,7 @@ struct OverlayPreviewView: View {
                 } else {
                     Markdown(text)
                         .markdownTheme(.sattoPad(baseSize: baseFontSize))
+                        .markdownSoftBreakMode(.lineBreak)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

@@ -61,13 +61,16 @@ struct OverlayTypography {
 extension Theme {
     static func sattoPad(baseSize: Double) -> Theme {
         let base = CGFloat(baseSize)
-        return Theme()
+        let bodySize = FontSize(base)
+
+        return Theme.basic
             .text {
-                FontSize(base)
+                bodySize
             }
             .code {
                 FontFamilyVariant(.monospaced)
                 FontSize(base - 1)
+                BackgroundColor(Color.secondary.opacity(0.18))
             }
             .heading1 { configuration in
                 configuration.label
@@ -75,7 +78,6 @@ extension Theme {
                         FontWeight(.bold)
                         FontSize(base + 9)
                     }
-                    .markdownMargin(top: .em(1.2), bottom: .em(0.6))
             }
             .heading2 { configuration in
                 configuration.label
@@ -83,7 +85,6 @@ extension Theme {
                         FontWeight(.semibold)
                         FontSize(base + 7)
                     }
-                    .markdownMargin(top: .em(1.1), bottom: .em(0.5))
             }
             .heading3 { configuration in
                 configuration.label
@@ -91,7 +92,6 @@ extension Theme {
                         FontWeight(.semibold)
                         FontSize(base + 5)
                     }
-                    .markdownMargin(top: .em(1.0), bottom: .em(0.4))
             }
             .heading4 { configuration in
                 configuration.label
@@ -99,7 +99,6 @@ extension Theme {
                         FontWeight(.semibold)
                         FontSize(base + 3)
                     }
-                    .markdownMargin(top: .em(0.9), bottom: .em(0.35))
             }
             .heading5 { configuration in
                 configuration.label
@@ -107,7 +106,6 @@ extension Theme {
                         FontWeight(.semibold)
                         FontSize(base + 1.5)
                     }
-                    .markdownMargin(top: .em(0.8), bottom: .em(0.3))
             }
             .heading6 { configuration in
                 configuration.label
@@ -115,26 +113,11 @@ extension Theme {
                         FontWeight(.semibold)
                         FontSize(base + 1)
                     }
-                    .markdownMargin(top: .em(0.8), bottom: .em(0.3))
             }
             .paragraph { configuration in
                 configuration.label
-                    .lineSpacing(OverlayTypography.lineSpacing)
-                    .markdownTextStyle {
-                        FontSize(base)
-                    }
-            }
-            .list { configuration in
-                configuration.label
-                    .markdownTextStyle {
-                        FontSize(base)
-                    }
-            }
-            .listItem { configuration in
-                configuration.label
-                    .markdownTextStyle {
-                        FontSize(base)
-                    }
+                    .markdownTextStyle { bodySize }
+                    .relativeLineSpacing(.em(OverlayTypography.lineSpacing / max(base, 1)))
             }
             .codeBlock { configuration in
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -156,13 +139,12 @@ extension Theme {
                         FontStyle(.italic)
                         FontSize(base)
                     }
-                    .padding(.leading, 12)
                     .overlay(alignment: .leading) {
                         Rectangle()
-                            .fill(Color.secondary.opacity(0.4))
+                            .fill(Color.secondary.opacity(0.35))
                             .frame(width: 3)
-                            .padding(.vertical, 4)
                     }
+                    .padding(.leading, 8)
             }
     }
 }
