@@ -10,8 +10,10 @@
 2. **レンダリング置換（完了）**
    - `OverlayPreviewView` 内の自前 MarkdownParser 呼び出しを MarkdownUI の `Markdown` ビューへ置換済み。
    - 自前のリスト描画ロジックは撤去し、MarkdownUI のデフォルトスタイルとテーマ拡張で調整。
-3. **テーマ調整**
-   - `OverlayTypography` に `Theme.sattoPad` を定義し、ベースフォントサイズ (`OverlaySettingsStore.fontSize`) を反映。
+3. **テーマ調整（完了）**
+   - `OverlayTypography` で `MarkdownTheme.sattoPad` を定義し、ベースフォント、見出しレベルのフォントサイズ／ウェイト、行間を旧実装同等に設定。
+   - 段落・リストは本文フォントを共有し、コードブロック／インラインコードはモノスペース＋背景色で読みやすさを確保。
+   - 引用にはアクセントバーを付与して視認性を高めた。
    - 背景や角丸は既存のラッパー (RoundedRectangle など) を継続使用。
 4. **スクロールと調整モード対応（要確認）**
    - 現在の `ScrollView` コンテナを維持し、MarkdownUI ビューを child として埋め込む。
@@ -26,6 +28,7 @@
 ## コミット前チェックリスト
 - [x] `OverlayPreviewView` が MarkdownUI の `Markdown` ビューで動作し、フォントサイズ設定が反映される。
 - [x] 不要になった `MarkdownRenderer.swift` と関連ヘルパーを削除した。
+- [x] MarkdownUI テーマ (`MarkdownTheme.sattoPad`) で見出し・段落・コードのスタイルを調整した。
 - [ ] スクロール位置の永続化が必要か確認し、必要なら実装または別タスクに切り出す。
 - [ ] 明暗両テーマで視認性を確認し、必要に応じ `MarkdownTheme` をカスタマイズした。
 - [ ] 主要ドキュメント（`README.md`、`AGENTS.md`、`docs/overlay-architecture.md`、`docs/hotkey-strategy.md`）を更新した。
