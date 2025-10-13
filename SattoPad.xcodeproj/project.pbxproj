@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E693791E2E9CA90800F44D66 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = E693791D2E9CA90800F44D66 /* MarkdownUI */; };
 		E69531022E5D3A8400C30EA9 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = E69531012E5D3A8400C30EA9 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
@@ -47,6 +48,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E69531022E5D3A8400C30EA9 /* KeyboardShortcuts in Frameworks */,
+				E693791E2E9CA90800F44D66 /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -114,6 +116,7 @@
 			name = SattoPad;
 			packageProductDependencies = (
 				E69531012E5D3A8400C30EA9 /* KeyboardShortcuts */,
+				E693791D2E9CA90800F44D66 /* MarkdownUI */,
 			);
 			productName = SattoPad;
 			productReference = E67378EA2E5C6B0D00ADBB9D /* SattoPad.app */;
@@ -193,6 +196,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				E69530FB2E5D2F2300C30EA9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				E693791C2E9CA90800F44D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E67378EB2E5C6B0D00ADBB9D /* Products */;
@@ -554,6 +558,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		E693791C2E9CA90800F44D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/MarkdownUI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
 		E69530FB2E5D2F2300C30EA9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
@@ -565,6 +577,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E693791D2E9CA90800F44D66 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E693791C2E9CA90800F44D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */;
+			productName = MarkdownUI;
+		};
 		E69531012E5D3A8400C30EA9 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E69530FB2E5D2F2300C30EA9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
