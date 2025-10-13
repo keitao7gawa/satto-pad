@@ -37,10 +37,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.contentViewController = NSHostingController(rootView: ContentView())
         popover.delegate = self
 
+        // Preload markdown so overlay-only usage shows latest notes
+        MarkdownStore.shared.loadOnLaunch()
+
         // Register global hotkey (KeyboardShortcuts preferred)
         #if canImport(KeyboardShortcuts)
         KeyboardShortcutsDefaults.ensureDefaultIfNeeded()
         KeyboardShortcuts.onKeyDown(for: .toggleSattoPad) {
+            OverlayManager.shared.update(text: MarkdownStore.shared.text)
             OverlayManager.shared.show()
         }
         KeyboardShortcuts.onKeyUp(for: .toggleSattoPad) {
@@ -67,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     private func showPopover(_ sender: Any?) {
         guard let button = statusItem.button else { return }
+        OverlayManager.shared.update(text: MarkdownStore.shared.text)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         // Bring app forward enough to receive key events inside the popover
         NSApp.activate(ignoringOtherApps: true)
