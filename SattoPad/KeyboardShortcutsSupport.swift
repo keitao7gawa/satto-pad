@@ -15,11 +15,9 @@ extension KeyboardShortcuts.Name {
 
 struct KeyboardShortcutsDefaults {
     static func ensureDefaultIfNeeded() {
-        #if DEBUG
         if KeyboardShortcuts.getShortcut(for: .toggleSattoPad) == nil {
             KeyboardShortcuts.setShortcut(.init(.t, modifiers: [.command, .shift]), for: .toggleSattoPad)
         }
-        #endif
     }
 }
 #endif
