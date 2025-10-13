@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import MarkdownUI
 
 struct OverlayTypography {
     // MARK: - Font Configuration
@@ -54,5 +55,11 @@ struct OverlayTypography {
     
     static func fontForCode(baseSize: Double) -> Font {
         return .system(size: CGFloat(baseSize), design: .monospaced)
+    }
+}
+
+extension MarkdownUI.Theme {
+    static func sattoPad(baseSize: Double) -> MarkdownUI.Theme {
+        MarkdownUI.Theme()
     }
 }

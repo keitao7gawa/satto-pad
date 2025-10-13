@@ -14,8 +14,7 @@ Deliver a press-and-hold preview that appears near-instantly, shows the current 
 - On screen changes, clamp the overlay to safe margins inside the visible frame.
 
 ## Rendering Pipeline
-- `OverlayPreviewView` consumes the latest markdown text and renders it using SwiftUI.
-- Markdown formatting relies on `MarkdownRenderer` and typographic rules in `OverlayTypography` for predictable headings and spacing.
+- `OverlayPreviewView` consumes the latest markdown text and renders it via MarkdownUI with the custom `Theme.sattoPad` defined in `OverlayTypography`.
 - Throttle updates (≈150ms) to avoid unnecessary re-layout while typing.
 
 ## Interaction Flow

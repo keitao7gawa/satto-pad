@@ -9,7 +9,7 @@
 
 ## Key Swift Modules
 - **Overlay UI**: `OverlayHeaderView.swift`, `OverlayPreviewView.swift`, `OverlayTypography.swift`, and `UIComponents.swift` compose the on-screen overlay experience.
-- **Data Flow**: `MarkdownStore.swift` debounces file writes, monitors external edits, and handles sandbox bookmarks. `MarkdownRenderer.swift` transforms Markdown into attributed strings for display.
+- **Data Flow**: `MarkdownStore.swift` debounces file writes, monitors external edits, and handles sandbox bookmarks. Markdown プレビューは `OverlayPreviewView.swift` が MarkdownUI を用いて描画します。
 - **Preferences & State**: `OverlaySettingsStore.swift`, `KeyboardShortcutsSupport.swift`, and `UserDefaultsPropertyWrapper.swift` manage configurable settings and persistence.
 - **Supporting Views**: `AboutView.swift` and `ContentView.swift` handle the settings popover and informational UI.
 

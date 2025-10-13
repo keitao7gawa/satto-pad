@@ -7,7 +7,7 @@
 
 ## Focus Areas
 - **ContentView Decomposition**: Extract header/UI controls into dedicated views (`OverlayHeaderView`, `TrailingMenuButtons`, `FontStepperView`). Centralise layout constants in `HeaderLayoutConstants` and move reusable controls such as `RepeatButton` into shared components.
-- **Overlay Preview Cleanup**: Split markdown parsing into `MarkdownRenderer` and typography rules into `OverlayTypography`. Limit direct `@AppStorage` usage inside views and prefer injected dependencies for testability.
+- **Overlay Preview Cleanup**: 既存の MarkdownUI テーマ設定を見直し、`OverlayPreviewView` の責務を描画ロジックとレイアウト調整に集中させる。`@AppStorage` の利用を最小限にし、テスト可能性を高める。
 - **OverlayManager Simplification**: Isolate window creation, state toggling, and delegate callbacks. Persist positions during `windowDidEndLiveResize`, and ensure adjustments toggle as a single mode.
 - **OverlaySettingsStore Hygiene**: Namespace `UserDefaults` keys in a private `Keys` enum and consider property wrappers to reduce boilerplate.
 - **MarkdownStore Maintenance**: Separate debounce scheduling, file monitoring, and bookmark handling into dedicated helpers. Keep Combine adoption optional but ensure retry/backoff logic remains intact.
