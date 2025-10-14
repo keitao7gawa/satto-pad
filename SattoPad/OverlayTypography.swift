@@ -146,5 +146,12 @@ extension Theme {
                     }
                     .padding(.leading, 8)
             }
+            .taskListMarker { configuration in
+                Image(systemName: configuration.isCompleted ? "checkmark.square" : "square")
+                    .symbolRenderingMode(.hierarchical)
+                    .imageScale(.small)
+                    .foregroundStyle(Color.secondary)
+                    .padding(.trailing, 4)
+            }
     }
 }

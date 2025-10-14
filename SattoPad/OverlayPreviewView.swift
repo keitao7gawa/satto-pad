@@ -72,6 +72,7 @@ fileprivate func processedMarkdown(_ text: String) -> String {
     let lines = text.components(separatedBy: "\n")
     var output = ""
     var inFence = false
+    var previousListKind: ListKind = .none
 
     for index in lines.indices {
         let line = lines[index]
@@ -82,17 +83,76 @@ fileprivate func processedMarkdown(_ text: String) -> String {
             inFence.toggle()
         }
 
+        let currentKind = inFence ? ListKind.none : listKind(for: trimmed)
+        if currentKind != .none {
+            if previousListKind != .none && currentKind != previousListKind {
+                while output.last == " " {
+                    output.removeLast()
+                }
+                if !output.hasSuffix("\n\n") {
+                    if !output.hasSuffix("\n") { output.append("\n") }
+                    output.append("\n")
+                }
+            }
+        }
+
         output.append(line)
+        if currentKind != .none {
+            previousListKind = currentKind
+        }
 
         if index < lines.count - 1 {
             let nextLine = lines[index + 1]
+            let nextTrimmed = nextLine.trimmingCharacters(in: .whitespaces)
+            let nextKind = inFence ? ListKind.none : listKind(for: nextTrimmed)
             if inFence || line.isEmpty || nextLine.isEmpty {
                 output.append("\n")
+            } else if currentKind != .none && nextKind != .none {
+                output.append("\n")
+            } else if currentKind != .none && nextKind == .none {
+                output.append("\n\n")
+            } else if currentKind == .none && nextKind != .none {
+                output.append("\n\n")
             } else {
                 output.append("  \n")
             }
         }
+
+        if currentKind == .none && !trimmed.isEmpty {
+            previousListKind = .none
+        }
     }
 
     return output
+}
+
+private enum ListKind {
+    case none
+    case bullet
+    case task
+}
+
+private func listKind(for trimmedLine: String) -> ListKind {
+    guard !trimmedLine.isEmpty else { return .none }
+
+    let bulletPrefixes = ["- ", "* ", "+ "]
+    if bulletPrefixes.contains(where: { trimmedLine.hasPrefix($0) }) {
+        if trimmedLine.count >= 4,
+           trimmedLine[trimmedLine.index(trimmedLine.startIndex, offsetBy: 2)] == "[",
+           let closingIndex = trimmedLine.index(trimmedLine.startIndex, offsetBy: 4, limitedBy: trimmedLine.endIndex),
+           closingIndex < trimmedLine.endIndex,
+           trimmedLine[closingIndex] == "]" {
+            return .task
+        }
+        return .bullet
+    }
+    if let match = trimmedLine.first, match.isNumber {
+        if let dotIndex = trimmedLine.firstIndex(of: "."), dotIndex < trimmedLine.endIndex {
+            let afterDot = trimmedLine.index(after: dotIndex)
+            if afterDot < trimmedLine.endIndex, trimmedLine[afterDot] == " " {
+                return .bullet
+            }
+        }
+    }
+    return .none
 }
