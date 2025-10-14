@@ -40,7 +40,7 @@ struct OverlayPreviewView: View {
                     }
                 }
             }
-            .scrollIndicators(adjustable ? .visible : .hidden)
+            .scrollIndicators(.visible)
             .scrollDisabled(!adjustable)
             .padding(.top, 0)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
