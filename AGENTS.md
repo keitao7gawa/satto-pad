@@ -16,7 +16,7 @@ Adopt four-space indentation and Swift API Design Guideline naming (`UpperCamelC
 Introduce a `SattoPadTests` target for new logic, name suites after their subject, and inject dependencies to avoid filesystem coupling. Manual checks remain essential for hotkeys and overlay behavior; document gaps in PRs. Detailed flows and coverage targets are captured in [docs/testing-guidelines.md](docs/testing-guidelines.md).
 
 ## Hotkey & Overlay Operations
-Implement the press-and-hold shortcut with KeyboardShortcuts as described in [docs/hotkey-strategy.md](docs/hotkey-strategy.md), and keep the preview responsive using the window lifecycle in [docs/overlay-architecture.md](docs/overlay-architecture.md). For autosave and reload behaviour, rely on the guarantees in [docs/autosave-system.md](docs/autosave-system.md).
+Implement the press-and-hold shortcut with KeyboardShortcuts as described in [docs/hotkey-strategy.md](docs/hotkey-strategy.md), and keep the preview responsive using the window lifecycle in [docs/overlay-architecture.md](docs/overlay-architecture.md). MarkdownUI 導入に伴う前処理やテーマ調整の詳細は [docs/markdown-ui-migration.md](docs/markdown-ui-migration.md) を参照してください。For autosave and reload behaviour, rely on the guarantees in [docs/autosave-system.md](docs/autosave-system.md).
 
 ## Commit & Pull Request Guidelines
 Mirror the existing `docs:` / `update:` prefixes with concise, imperative summaries, and keep unrelated changes split. PRs should outline scope, test evidence, UI captures, and any entitlement implications. Refer to [docs/commits-and-prs.md](docs/commits-and-prs.md) for branch naming patterns and review expectations.

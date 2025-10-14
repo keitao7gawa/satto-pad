@@ -28,6 +28,7 @@ Adopt the [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts)
   KeyboardShortcuts.onKeyUp(for: .toggleSattoPad) { [weak self] in self?.overlayManager.hide() }
   ```
 - Integrate the Recorder within SwiftUI settings and expose `Reset` and `Clear` buttons via `KeyboardShortcuts.reset`.
+- ホットキー押下時は `OverlayManager.update(text:)` を通じて MarkdownUI プレビュー用のテキスト変換とテーマ適用を行い、オーバーレイ表示をブロックしないようにする。
 
 ## UX Requirements
 - Provide guidance copy: “Press-and-hold shortcut to show SattoPad.”

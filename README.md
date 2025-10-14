@@ -39,6 +39,7 @@ Dockやウィンドウは表示せず、メニューバーに静かに常駐。�
 
 ### ✨ 編集とカスタマイズ
 - **Markdownサポート**: リストや見出しなど、基本的な記法に対応。思考を構造化するのに役立ちます
+- **MarkdownUIプレビュー**: オーバーレイは [MarkdownUI](https://github.com/gonzalezreal/MarkdownUI) をベースに、SattoPad専用テーマで見出し・コード・チェックリストを読みやすく表示します
 - **ローカル保存**: メモは `~/Documents/SattoPad.md` に安全に保存。シンプルで透明性の高い設計です
 - **柔軟な設定**:
   - **保存先の変更**: あなたの好きな場所にメモファイルを置くことができます
@@ -124,13 +125,14 @@ Cmd + Shift + T を長押し
 **開発者**: [@keitao7gawa](https://github.com/keitao7gawa)  
 **方針**: シンプルで実用的なツールの提供
 
-### 技術スタック
 - **SwiftUI** - モダンなUI
 - **AppKit** - ネイティブmacOS統合
+- **MarkdownUI** - オーバーレイのMarkdownレンダリング
 - **KeyboardShortcuts** - グローバルショートカット
 - **Carbon** - フォールバック対応
 
 ### 依存関係
+- `MarkdownUI` (MIT License)
 - `KeyboardShortcuts` (MIT License)
 - `SwiftUI` (Apple)
 - `AppKit` (Apple)
