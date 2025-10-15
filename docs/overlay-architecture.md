@@ -16,6 +16,7 @@ Deliver a press-and-hold preview that appears near-instantly, shows the current 
 ## Rendering Pipeline
 - `OverlayPreviewView` consumes the latest markdown text and renders it via MarkdownUI with the custom `Theme.sattoPad` defined in `OverlayTypography`.
 - MarkdownUI に渡す前に、単一改行を `  \n` に変換し、通常リストとチェックボックスリストの境界に空行を挿入する前処理を実施。
+- `<!--@hide-->` と `<!--@show-->` で囲まれた領域はオーバーレイ表示前に除去され、ポップアップでは編集内容が維持される。
 - Throttle updates (≈150ms) to avoid unnecessary re-layout while typing。
 
 ## Interaction Flow

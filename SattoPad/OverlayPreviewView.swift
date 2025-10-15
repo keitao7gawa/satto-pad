@@ -24,14 +24,17 @@ struct OverlayPreviewView: View {
                 .shadow(radius: 8)
 
             ScrollView {
-                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let visibleText = removingOverlayHiddenSections(from: text)
+                let trimmedVisible = visibleText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if trimmedVisible.isEmpty {
                     Text("No content")
                         .foregroundStyle(.secondary)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     VStack(alignment: .leading, spacing: 0) {
-                        Markdown(processedMarkdown(text))
+                        Markdown(processedMarkdown(visibleText))
                             .markdownTheme(.sattoPad(baseSize: baseFontSize))
                             .markdownSoftBreakMode(.lineBreak)
                             .padding(12)
@@ -121,6 +124,51 @@ fileprivate func processedMarkdown(_ text: String) -> String {
         if currentKind == .none && !trimmed.isEmpty {
             previousListKind = .none
         }
+    }
+
+    return output
+}
+
+private let overlayControlRegex = try? NSRegularExpression(
+    pattern: "<![\\-–—]+\\s*@\\s*(hide|show)\\s*[\\-–—]+>",
+    options: [.caseInsensitive]
+)
+
+fileprivate func removingOverlayHiddenSections(from text: String) -> String {
+    guard let regex = overlayControlRegex else {
+        return text
+    }
+
+    let nsText = text as NSString
+    var output = ""
+    var searchLocation = 0
+    var isHidden = false
+
+    while searchLocation < nsText.length {
+        let searchRange = NSRange(location: searchLocation, length: nsText.length - searchLocation)
+
+        guard let match = regex.firstMatch(in: text, range: searchRange) else {
+            if !isHidden {
+                output.append(nsText.substring(from: searchLocation))
+            }
+            break
+        }
+
+        let prefixLength = match.range.location - searchLocation
+        if prefixLength > 0 && !isHidden {
+            output.append(nsText.substring(with: NSRange(location: searchLocation, length: prefixLength)))
+        }
+
+        if match.range(at: 1).location != NSNotFound {
+            let token = nsText.substring(with: match.range(at: 1)).lowercased()
+            if token == "hide" {
+                isHidden = true
+            } else if token == "show" {
+                isHidden = false
+            }
+        }
+
+        searchLocation = match.range.location + match.range.length
     }
 
     return output
