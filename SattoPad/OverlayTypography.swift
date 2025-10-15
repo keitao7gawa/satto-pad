@@ -35,10 +35,7 @@ struct OverlayTypography {
         6: .semibold
     ]
     
-    // MARK: - Layout Constants
-    static let bulletIndent: CGFloat = 14.0
-    static let bulletSpacing: CGFloat = 6.0
-    static let taskListSpacing: CGFloat = 8.0
+    // MARK: - Code Block Styling
     static let codeBlockPadding: CGFloat = 8.0
     static let codeBlockCornerRadius: CGFloat = 6.0
     
