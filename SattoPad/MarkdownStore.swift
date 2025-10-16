@@ -58,13 +58,33 @@ final class MarkdownStore: ObservableObject {
     }
 
     func selectSaveLocation() {
+        // First, ask user what they want to do
+        let alert = NSAlert()
+        alert.messageText = "保存先を選択"
+        alert.informativeText = "既存のファイルを選択するか，新しいファイルを作成するかを選択してください．"
+        alert.addButton(withTitle: "既存ファイルを選択")
+        alert.addButton(withTitle: "新しいファイルを作成")
+        alert.addButton(withTitle: "キャンセル")
+        
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn || response == .alertSecondButtonReturn else { return }
+        
+        if response == .alertFirstButtonReturn {
+            // Select existing file
+            selectExistingFile()
+        } else {
+            // Create new file
+            createNewFile()
+        }
+    }
+    
+    private func selectExistingFile() {
         let panel = NSOpenPanel()
-        panel.title = "保存先を選択"
+        panel.title = "既存ファイルを選択"
         panel.prompt = "選択"
         panel.canChooseFiles = true
-        panel.canChooseDirectories = true
+        panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.canCreateDirectories = true
         if #available(macOS 12.0, *) {
             var types: [UTType] = [.plainText]
             if let md = UTType(filenameExtension: "md") { types.insert(md, at: 0) }
@@ -76,28 +96,108 @@ final class MarkdownStore: ObservableObject {
 
         let response = panel.runModal()
         guard response == .OK, let url = panel.url else { return }
-
-        // If a directory was selected, use SattoPad.md inside it
-        var isDir: ObjCBool = false
-        var targetURL = url
-        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
-            targetURL = url.appendingPathComponent("SattoPad.md")
-        }
+        
+        let targetURL = url
 
         // Persist path and security-scoped bookmark (for sandbox配布も考慮)
         defaults.set(targetURL.path, forKey: pathKey)
         _ = createBookmark(for: targetURL)
 
-        // If file exists, load it. If not, create it with current text
+        // Load existing file
         accessURL(targetURL) { accessibleURL in
-            if FileManager.default.fileExists(atPath: accessibleURL.path) {
-                readFile(at: accessibleURL)
-            } else {
-                ensureParentDirectoryExists(for: accessibleURL)
-                _ = writeString(text, to: accessibleURL)
-            }
+            readFile(at: accessibleURL)
             startFileMonitor(for: accessibleURL)
         }
+    }
+    
+    private func createNewFile() {
+        // First select directory
+        let panel = NSOpenPanel()
+        panel.title = "保存先ディレクトリを選択"
+        panel.prompt = "選択"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+
+        let response = panel.runModal()
+        guard response == .OK, let url = panel.url else { return }
+        
+        // Then ask for filename with existence check
+        var filename = "SattoPad.md"
+        var targetURL = url.appendingPathComponent(filename)
+        
+        // Check if file already exists and ask for different name if needed
+        while FileManager.default.fileExists(atPath: targetURL.path) {
+            let conflictAlert = NSAlert()
+            conflictAlert.messageText = "ファイルが既に存在します"
+            conflictAlert.informativeText = "「\(filename)」は既に存在します．別の名前を入力するか，自動で番号を付けて作成できます．"
+            
+            let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+            textField.stringValue = filename
+            conflictAlert.accessoryView = textField
+            
+            conflictAlert.addButton(withTitle: "作成")
+            conflictAlert.addButton(withTitle: "番号を付けて作成")
+            conflictAlert.addButton(withTitle: "キャンセル")
+            
+            let conflictResponse = conflictAlert.runModal()
+            guard conflictResponse == .alertFirstButtonReturn || conflictResponse == .alertSecondButtonReturn else { return }
+            
+            if conflictResponse == .alertSecondButtonReturn {
+                // Auto-generate filename with number
+                filename = generateUniqueFilename(baseName: filename, in: url)
+                targetURL = url.appendingPathComponent(filename)
+            } else {
+                // User provided custom filename
+                let newFilename = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !newFilename.isEmpty else {
+                    // Show error for empty filename
+                    let errorAlert = NSAlert()
+                    errorAlert.messageText = "ファイル名が空です"
+                    errorAlert.informativeText = "有効なファイル名を入力してください．"
+                    errorAlert.addButton(withTitle: "OK")
+                    errorAlert.runModal()
+                    continue
+                }
+                
+                filename = newFilename
+                targetURL = url.appendingPathComponent(filename)
+            }
+        }
+        
+        // Persist path and security-scoped bookmark
+        defaults.set(targetURL.path, forKey: pathKey)
+        _ = createBookmark(for: targetURL)
+
+        // Create new file with current text
+        accessURL(targetURL) { accessibleURL in
+            ensureParentDirectoryExists(for: accessibleURL)
+            _ = writeString(text, to: accessibleURL)
+            startFileMonitor(for: accessibleURL)
+        }
+    }
+
+
+    // MARK: - File Name Helpers
+    
+    private func generateUniqueFilename(baseName: String, in directory: URL) -> String {
+        let fileExtension = (baseName as NSString).pathExtension
+        let nameWithoutExtension = (baseName as NSString).deletingPathExtension
+        
+        var counter = 1
+        var candidateName = baseName
+        
+        while FileManager.default.fileExists(atPath: directory.appendingPathComponent(candidateName).path) {
+            if fileExtension.isEmpty {
+                candidateName = "\(nameWithoutExtension) \(counter)"
+            } else {
+                candidateName = "\(nameWithoutExtension) \(counter).\(fileExtension)"
+            }
+            counter += 1
+        }
+        
+        return candidateName
     }
 
     // MARK: - Debounce Management
