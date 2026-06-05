@@ -20,3 +20,4 @@
 ## Packaging & Distribution
 - Update signing identities in `SattoPad.xcodeproj` when preparing TestFlight or direct distribution builds.
 - Export notarized builds using `xcodebuild -scheme SattoPad -configuration Release archive` followed by `xcodebuild -exportArchive`. Document any required entitlements in the release notes.
+- See [release.md](release.md) for the GitHub Actions DMG workflow, including the `[release]` commit-message trigger and local packaging commands.
