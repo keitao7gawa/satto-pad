@@ -9,9 +9,9 @@
 
 ## Key Swift Modules
 - **Overlay UI**: `OverlayHeaderView.swift`, `OverlayPreviewView.swift`, `OverlayTypography.swift`, and `UIComponents.swift` compose the on-screen overlay experience.
-- **Data Flow**: `MarkdownStore.swift` debounces file writes, monitors external edits, and handles sandbox bookmarks. Markdown プレビューは `OverlayPreviewView.swift` が MarkdownUI を用いて描画します。
+- **Data Flow**: `MarkdownStore.swift` debounces file writes, monitors external edits, and handles sandbox bookmarks. `MemoAssignmentStore.swift` resolves the default memo file and optional per-desktop overrides before `MarkdownStore` loads content. Markdown プレビューは `OverlayPreviewView.swift` が MarkdownUI を用いて描画します。
 - **Preferences & State**: `OverlaySettingsStore.swift`, `KeyboardShortcutsSupport.swift`, and `UserDefaultsPropertyWrapper.swift` manage configurable settings and persistence.
-- **Supporting Views**: `AboutView.swift` and `ContentView.swift` handle the settings popover and informational UI.
+- **Supporting Views**: `AboutView.swift`, `DesktopMemoSettingsView.swift`, and `ContentView.swift` handle the settings popover, desktop memo assignments, and informational UI.
 
 ## Adding New Features
 1. Place new view models or stores alongside existing peers inside `SattoPad/` and suffix the filename with the primary responsibility (`EditorToolbarStore.swift`).

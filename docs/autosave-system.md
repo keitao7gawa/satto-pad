@@ -13,12 +13,14 @@ Persist user notes to a Markdown file automatically and reliably, supporting bot
 - `selectSaveLocation()` opens `NSOpenPanel`; directories append `SattoPad.md` automatically.
 - Store `sattoPad.markdownPath` and security-scoped bookmarks (`sattoPad.markdownBookmark`) in `UserDefaults`.
 - Always call `startAccessingSecurityScopedResource()` / `stopAccessing…` around sandbox file access.
+- `MemoAssignmentStore` extends this with a default memo file plus per-desktop overrides. Existing single-file settings migrate into the default memo file so users who want one md everywhere keep the original behaviour.
 
 ## Runtime Behaviour
 - Compare text with `lastSavedText` to skip no-op writes.
 - Flush pending work on explicit `saveNow()` (e.g., when closing the popover).
 - Provide a manual “Reload from File” action that warns if unsaved edits exist.
 - Watch for external changes via `DispatchSourceFileSystemObject`; ignore events within ~1s of SattoPad’s own writes, then reload or prompt the user.
+- When the active desktop assignment changes, flush pending edits before switching `MarkdownStore` to the resolved memo file. Multiple desktops may point to the same `MemoFileReference`; edits then intentionally update the shared file.
 
 ## Error Handling
 - Read failures: keep existing text visible, set `lastErrorMessage`, and prompt users to reselect a path.
@@ -30,3 +32,4 @@ Persist user notes to a Markdown file automatically and reliably, supporting bot
 - Change location: pick Desktop, verify subsequent saves and reload persistence.
 - External edit: modify the file in another editor; confirm SattoPad notices and prompts appropriately.
 - Permission loss: revoke access and observe error messaging, ensuring no data loss.
+- Desktop assignments: register two desktops, assign one override, switch Spaces, and confirm the shortcut previews the resolved file. Rebind registered desktops after relaunch because macOS does not expose stable public Space identifiers.

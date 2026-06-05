@@ -21,6 +21,7 @@ struct ContentView: View {
     @State private var overlayFontSize: Double = OverlaySettingsStore.fontSize
     @Environment(\.dismiss) private var dismiss
     @StateObject private var mdStore = MarkdownStore.shared
+    @StateObject private var assignmentStore = MemoAssignmentStore.shared
     @State private var showConfirmReload: Bool = false
     @State private var showConfirmChangeLocation: Bool = false
     @State private var showErrorAlert: Bool = false
@@ -28,6 +29,7 @@ struct ContentView: View {
     @State private var showWarningAlert: Bool = false
     @State private var warningMessage: String = ""
     @State private var showHotkeySheet: Bool = false
+    @State private var showDesktopMemoSettings: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -36,6 +38,7 @@ struct ContentView: View {
                 overlayFontSize: $overlayFontSize,
                 saveLocation: { requestSelectSaveLocation() },
                 reloadFromDisk: { requestReload() },
+                desktopMemoSettings: { showDesktopMemoSettings = true },
                 close: { closePopover() }
             )
             .padding(.horizontal, 8)
@@ -58,6 +61,7 @@ struct ContentView: View {
             isEditorFocused = true
             // When the popover opens, show overlay and allow drag to reposition
             OverlayManager.shared.setAdjustable(true)
+            mdStore.activateMemoFile(MemoAssignmentStore.shared.memoFileForActiveDesktop())
             OverlayManager.shared.update(text: memoText)
             OverlayManager.shared.show()
             // Load memo from disk
@@ -105,6 +109,12 @@ struct ContentView: View {
             showWarningAlert = true
             mdStore.lastWarningMessage = nil
         }
+        .onChange(of: assignmentStore.lastWarningMessage) { _, newValue in
+            guard let msg = newValue, !msg.isEmpty else { return }
+            warningMessage = msg
+            showWarningAlert = true
+            assignmentStore.lastWarningMessage = nil
+        }
         .onChange(of: overlayOpacity) { _, newValue in
             let clamped = max(0.05, min(1.0, newValue))
             // Round to 2 decimals to stabilize float errors for 1% steps
@@ -146,6 +156,9 @@ struct ContentView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(warningMessage)
+        }
+        .sheet(isPresented: $showDesktopMemoSettings) {
+            DesktopMemoSettingsView()
         }
     }
 

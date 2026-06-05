@@ -20,9 +20,14 @@ Deliver a press-and-hold preview that appears near-instantly, shows the current 
 - Throttle updates (≈150ms) to avoid unnecessary re-layout while typing。
 
 ## Interaction Flow
-1. `KeyboardShortcuts.onKeyDown` → `OverlayManager.show()` orders the window front and updates content.
+1. `KeyboardShortcuts.onKeyDown` → resolve the active desktop memo via `MemoAssignmentStore`, update `MarkdownStore`, then `OverlayManager.show()` orders the window front.
 2. `KeyboardShortcuts.onKeyUp` → `OverlayManager.hide()` calls `orderOut` without destroying the window.
 3. When the settings popover opens, enable adjustment mode so users can drag the overlay and store the new coordinates.
+
+## Desktop Assignment Notes
+- The overlay still uses `.canJoinAllSpaces` so the preview can appear from whichever Space the user is in.
+- macOS does not provide a stable public API for enumerating Spaces or persisting their system identifiers. SattoPad uses transparent marker windows and `NSWorkspace.activeSpaceDidChangeNotification` to recognize registered desktops while the app is running.
+- After app relaunch, users may need to rebind a saved desktop row to the current Space from the desktop memo settings screen. File assignments remain persisted; only the runtime Space binding is session-scoped.
 
 ## Performance Targets
 - Show/hide latency <50ms.

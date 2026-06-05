@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import AppKit
+import Combine
 import Carbon.HIToolbox
 #if canImport(KeyboardShortcuts)
 import KeyboardShortcuts
@@ -18,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let popover = NSPopover()
     private var hotKeyRef: EventHotKeyRef?
     private var hotKeyEventHandlerRef: EventHandlerRef?
+    private var cancellables = Set<AnyCancellable>()
 
     private var statusButton: NSStatusBarButton? { statusItem?.button }
 
@@ -38,13 +40,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.delegate = self
 
         // Preload markdown so overlay-only usage shows latest notes
+        MemoAssignmentStore.shared.startTrackingSpaces()
         MarkdownStore.shared.loadOnLaunch()
+        observeDesktopAssignmentChanges()
 
         // Register global hotkey (KeyboardShortcuts preferred)
         #if canImport(KeyboardShortcuts)
         KeyboardShortcutsDefaults.ensureDefaultIfNeeded()
         KeyboardShortcuts.onKeyDown(for: .toggleSattoPad) {
-            OverlayManager.shared.update(text: MarkdownStore.shared.text)
+            self.syncMarkdownStoreWithActiveDesktop()
             OverlayManager.shared.show()
         }
         KeyboardShortcuts.onKeyUp(for: .toggleSattoPad) {
@@ -71,7 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     private func showPopover(_ sender: Any?) {
         guard let button = statusItem.button else { return }
-        OverlayManager.shared.update(text: MarkdownStore.shared.text)
+        syncMarkdownStoreWithActiveDesktop()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         // Bring app forward enough to receive key events inside the popover
         NSApp.activate(ignoringOtherApps: true)
@@ -85,6 +89,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Ensure overlay is hidden when popover closes
         OverlayManager.shared.hide()
         OverlayManager.shared.setAdjustable(false)
+    }
+
+    private func observeDesktopAssignmentChanges() {
+        MemoAssignmentStore.shared.$activeDesktopID
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMarkdownStoreWithActiveDesktop()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func syncMarkdownStoreWithActiveDesktop() {
+        let memoFile = MemoAssignmentStore.shared.memoFileForActiveDesktop()
+        MarkdownStore.shared.activateMemoFile(memoFile)
+        OverlayManager.shared.update(text: MarkdownStore.shared.text)
     }
 
     // MARK: - NSPopoverDelegate

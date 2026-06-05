@@ -27,6 +27,7 @@ final class MarkdownStore: ObservableObject {
     private let bookmarkKey = "sattoPad.markdownBookmark"
     private var lastSavedText: String = ""
     private var lastWriteAt: Date?
+    private var activeMemoFile: MemoFileReference?
 
     // File monitoring (external changes)
     private var fileMonitor: DispatchSourceFileSystemObject?
@@ -38,6 +39,14 @@ final class MarkdownStore: ObservableObject {
     // MARK: - Public API
 
     func loadOnLaunch() {
+        activeMemoFile = MemoAssignmentStore.shared.memoFileForActiveDesktop()
+        readCurrentFile()
+    }
+
+    func activateMemoFile(_ memoFile: MemoFileReference) {
+        guard activeMemoFile != memoFile else { return }
+        saveNow()
+        activeMemoFile = memoFile
         readCurrentFile()
     }
 
@@ -99,9 +108,7 @@ final class MarkdownStore: ObservableObject {
         
         let targetURL = url
 
-        // Persist path and security-scoped bookmark (for sandbox配布も考慮)
-        defaults.set(targetURL.path, forKey: pathKey)
-        _ = createBookmark(for: targetURL)
+        activeMemoFile = MemoAssignmentStore.shared.updateActiveMemoFileLocation(to: targetURL)
 
         // Load existing file
         accessURL(targetURL) { accessibleURL in
@@ -166,9 +173,7 @@ final class MarkdownStore: ObservableObject {
             }
         }
         
-        // Persist path and security-scoped bookmark
-        defaults.set(targetURL.path, forKey: pathKey)
-        _ = createBookmark(for: targetURL)
+        activeMemoFile = MemoAssignmentStore.shared.updateActiveMemoFileLocation(to: targetURL)
 
         // Create new file with current text
         accessURL(targetURL) { accessibleURL in
@@ -248,8 +253,9 @@ final class MarkdownStore: ObservableObject {
     }
     
     private func saveTextToFile(_ text: String) {
+        guard let url = resolveSaveURL() else { return }
         ioQueue.async { [weak self] in
-            guard let self, let url = self.resolveSaveURL() else { return }
+            guard let self else { return }
             self.accessURL(url) { accessibleURL in
                 let success = self.writeTextWithRetry(text, to: accessibleURL)
                 self.handleSaveResult(success: success, text: text)
@@ -356,7 +362,8 @@ final class MarkdownStore: ObservableObject {
     }
     
     private func resolveFromBookmark() -> URL? {
-        guard let data = defaults.data(forKey: bookmarkKey) else { return nil }
+        let bookmarkData = activeMemoFile?.bookmarkData ?? defaults.data(forKey: bookmarkKey)
+        guard let data = bookmarkData else { return nil }
         
         do {
             var stale = false
@@ -372,6 +379,9 @@ final class MarkdownStore: ObservableObject {
     }
     
     private func resolveFromPath() -> URL? {
+        if let path = activeMemoFile?.path, !path.isEmpty {
+            return URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+        }
         guard let path = defaults.string(forKey: pathKey), !path.isEmpty else { return nil }
         return URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
     }
@@ -387,7 +397,12 @@ final class MarkdownStore: ObservableObject {
     private func refreshBookmark(for url: URL) {
         do {
             let newData = try url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
-            defaults.set(newData, forKey: bookmarkKey)
+            if let activeMemoFile {
+                MemoAssignmentStore.shared.updateBookmark(for: activeMemoFile.id, bookmarkData: newData)
+                self.activeMemoFile?.bookmarkData = newData
+            } else {
+                defaults.set(newData, forKey: bookmarkKey)
+            }
         } catch {
             logBookmarkError("refresh failed", error: error)
         }

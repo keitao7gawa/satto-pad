@@ -19,6 +19,7 @@ struct OverlayHeaderView: View {
 
     var saveLocation: () -> Void
     var reloadFromDisk: () -> Void
+    var desktopMemoSettings: () -> Void
     var close: () -> Void
 
     var body: some View {
@@ -59,6 +60,8 @@ struct OverlayHeaderView: View {
             // Trailing pair: … + ×
             HStack(spacing: HeaderLayoutConstants.trailingPairSpacing) {
                 Menu {
+                    Button("デスクトップ別メモ設定…", action: desktopMemoSettings)
+                    Divider()
                     Button("保存先を選択…", action: saveLocation)
                     Button("ファイルから再読み込み", action: reloadFromDisk)
                     Divider()
