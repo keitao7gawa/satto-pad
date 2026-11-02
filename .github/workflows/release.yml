@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   release:
-    name: Build and publish DMG
+    name: Build, publish DMG, and sync Homebrew
     runs-on: macos-15
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]')
 
@@ -73,3 +73,10 @@ jobs:
           name: SattoPad ${{ steps.version.outputs.version }}
           files: build/release/SattoPad.dmg
           generate_release_notes: true
+
+      - name: Sync Homebrew Cask
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          bash scripts/update-homebrew-cask.sh "$VERSION" build/release/SattoPad.dmg
